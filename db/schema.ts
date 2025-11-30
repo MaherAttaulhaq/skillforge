@@ -1,0 +1,130 @@
+import { sql } from 'drizzle-orm';
+import { sqliteTable, integer, text, real, primaryKey} from 'drizzle-orm/sqlite-core';
+
+
+/* ---------------- USERS ---------------- */
+export const users = sqliteTable("users", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  email: text("email").unique().notNull(),
+  passwordHash: text("password_hash").notNull(),
+  avatar: text("avatar"),
+  role: text("role").default("student"), // student | instructor | admin
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+/* ---------------- CATEGORIES ---------------- */
+export const categories = sqliteTable("categories", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  title: text("title").notNull(),
+  slug: text("slug").unique().notNull(),
+});
+
+/* ---------------- COURSES ---------------- */
+export const courses = sqliteTable("courses", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  title: text("title").notNull(),
+  slug: text("slug").unique().notNull(),
+  description: text("description"),
+  thumbnail: text("thumbnail"),
+  categoryId: integer("category_id")
+    .references(() => categories.id)
+    .notNull(),
+  instructorId: integer("instructor_id")
+    .references(() => users.id)
+    .notNull(),
+  level: text("level").default("beginner"), // beginner | intermediate | advanced
+  price: real("price").default(0),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+/* ---------------- MODULES ---------------- */
+export const modules = sqliteTable("modules", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  courseId: integer("course_id")
+    .references(() => courses.id)
+    .notNull(),
+  title: text("title").notNull(),
+  position: integer("position").notNull(),
+});
+
+/* ---------------- LESSONS ---------------- */
+export const lessons = sqliteTable("lessons", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  moduleId: integer("module_id")
+    .references(() => modules.id)
+    .notNull(),
+  title: text("title").notNull(),
+  content: text("content"),
+  videoUrl: text("video_url"),
+  position: integer("position").notNull(),
+});
+
+/* ---------------- ENROLLMENTS ---------------- */
+export const enrollments = sqliteTable("enrollments", {
+  userId: integer("user_id")
+    .references(() => users.id)
+    .notNull(),
+  courseId: integer("course_id")
+    .references(() => courses.id)
+    .notNull(),
+  enrolledAt: text("enrolled_at").default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.userId, table.courseId] }),
+}));
+
+/* ---------------- LESSON PROGRESS ---------------- */
+export const lessonProgress = sqliteTable("lesson_progress", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  lessonId: integer("lesson_id").references(() => lessons.id).notNull(),
+  isCompleted: integer("is_completed", { mode: "boolean" }).default(false),
+  updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+/* ---------------- COURSE REVIEWS ---------------- */
+export const reviews = sqliteTable("reviews", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  courseId: integer("course_id").references(() => courses.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  rating: integer("rating").notNull(), // 1–5
+  comment: text("comment"),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+/* ---------------- AI GENERATED CONTENT ---------------- */
+export const aiContent = sqliteTable("ai_content", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").references(() => users.id),
+  type: text("type").notNull(), // summary | explanation | quiz | flashcard
+  prompt: text("prompt").notNull(),
+  result: text("result").notNull(),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+/* ---------------- NOTIFICATIONS ---------------- */
+export const notifications = sqliteTable("notifications", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  title: text("title").notNull(),
+  message: text("message"),
+  isRead: integer("is_read", { mode: "boolean" }).default(false),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+/* ---------------- USER SKILLS ---------------- */
+export const userSkills = sqliteTable("user_skills", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  skill: text("skill").notNull(),
+  level: text("level").default("beginner"), // beginner | intermediate | expert
+});
+
+/* ---------------- CERTIFICATES ---------------- */
+export const certificates = sqliteTable("certificates", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  courseId: integer("course_id").references(() => courses.id).notNull(),
+  certificateUrl: text("certificate_url").notNull(),
+  issueDate: text("issue_date").default(sql`CURRENT_TIMESTAMP`),
+});
