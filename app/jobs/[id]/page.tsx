@@ -1,17 +1,35 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   ArrowRight,
   Bookmark,
   Sparkles,
   Briefcase,
   Users,
-  Calendar
-} from "lucide-react"
-import Link from "next/link"
+  Calendar,
+} from "lucide-react";
+import Link from "next/link";
+import { db } from "@/db";
+import { jobs } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
-export default function JobDetailPage() {
+interface params {
+  id?: number;
+}
+
+export default async function JobDetailPage({
+  params,
+}: {
+  params: Promise<params>;
+}) {
+  const { id } = await params;
+  const job = db
+    .select()
+    .from(jobs)
+    .where(eq(jobs.id, Number(id)))
+    .get();
+  console.log(job);
   return (
     <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
       {/* Breadcrumbs */}
@@ -30,7 +48,9 @@ export default function JobDetailPage() {
           Search Results
         </Link>
         <span className="text-muted-foreground">/</span>
-        <span className="text-foreground font-medium">Senior Product Designer</span>
+        <span className="text-foreground font-medium">
+          Senior Product Designer
+        </span>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 lg:gap-12">
@@ -48,7 +68,9 @@ export default function JobDetailPage() {
               </div>
               <div className="flex flex-col">
                 <p className="text-xl font-bold">Stripe</p>
-                <p className="text-base text-muted-foreground">San Francisco, CA</p>
+                <p className="text-base text-muted-foreground">
+                  San Francisco, CA
+                </p>
               </div>
             </div>
 
@@ -98,7 +120,8 @@ export default function JobDetailPage() {
                     SkillForge Analysis
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    You&apos;re a <span className="font-bold">90% match</span> for this role.
+                    You&apos;re a <span className="font-bold">90% match</span>{" "}
+                    for this role.
                   </p>
                 </div>
               </CardContent>
@@ -136,29 +159,50 @@ export default function JobDetailPage() {
                 <div className="prose prose-slate dark:prose-invert max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-a:text-primary hover:prose-a:underline">
                   <h3>About the Role</h3>
                   <p>
-                    As a Senior Product Designer at Stripe, you will be responsible for leading
-                    design projects from concept to launch. You&apos;ll work closely with product
-                    managers, engineers, and other stakeholders to create intuitive, elegant, and
-                    effective user experiences for our global customer base. We&apos;re looking for a
-                    passionate and talented designer who is excited about solving complex problems
-                    and building beautiful products.
+                    As a Senior Product Designer at Stripe, you will be
+                    responsible for leading design projects from concept to
+                    launch. You&apos;ll work closely with product managers,
+                    engineers, and other stakeholders to create intuitive,
+                    elegant, and effective user experiences for our global
+                    customer base. We&apos;re looking for a passionate and
+                    talented designer who is excited about solving complex
+                    problems and building beautiful products.
                   </p>
 
                   <h4>Key Responsibilities</h4>
                   <ul>
-                    <li>Lead the end-to-end design process for major features and new products.</li>
-                    <li>Collaborate with cross-functional teams to define user problems and develop innovative solutions.</li>
-                    <li>Create wireframes, prototypes, and high-fidelity mockups to communicate design ideas.</li>
-                    <li>Conduct user research and usability testing to validate design decisions.</li>
+                    <li>
+                      Lead the end-to-end design process for major features and
+                      new products.
+                    </li>
+                    <li>
+                      Collaborate with cross-functional teams to define user
+                      problems and develop innovative solutions.
+                    </li>
+                    <li>
+                      Create wireframes, prototypes, and high-fidelity mockups
+                      to communicate design ideas.
+                    </li>
+                    <li>
+                      Conduct user research and usability testing to validate
+                      design decisions.
+                    </li>
                     <li>Contribute to and maintain our design system.</li>
                   </ul>
 
                   <h4>Qualifications</h4>
                   <ul>
                     <li>5+ years of experience in product design.</li>
-                    <li>A strong portfolio showcasing your design work and process.</li>
-                    <li>Proficiency in Figma, Sketch, or other design tools.</li>
-                    <li>Experience working in an agile development environment.</li>
+                    <li>
+                      A strong portfolio showcasing your design work and
+                      process.
+                    </li>
+                    <li>
+                      Proficiency in Figma, Sketch, or other design tools.
+                    </li>
+                    <li>
+                      Experience working in an agile development environment.
+                    </li>
                     <li>Excellent communication and collaboration skills.</li>
                   </ul>
                 </div>
@@ -177,7 +221,7 @@ export default function JobDetailPage() {
                     "User Research",
                     "Design Systems",
                     "Agile Methodologies",
-                    "Collaboration"
+                    "Collaboration",
                   ].map((skill) => (
                     <Badge
                       key={skill}
@@ -199,18 +243,21 @@ export default function JobDetailPage() {
                     {
                       name: "Sarah Chen",
                       role: "Head of Design",
-                      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAQi4nkQy-f8I2R81RfYoJWR_88V2AvzrjzFw24YXqnWHHeaCRc8K6_bG1HIspY5cQulEj_a1tx7pGmkUPriiQWoygwkwNyuacPItdT9b2cEZyWDCiDof9zpNtQAchMmztnb3HCfafJGJmjJ-9fFGkG5MjaNEFg3rK00805IhD2RkVgeGbVGpukh36r1cSC7Kg6nIOzIGrxjPUB1lgbT8yJUo5g6ZPTUyls0LfvWMP2RLD9HZvQS_ianYQ-MzfMJ3Av5vHjpKZa_Ew"
+                      image:
+                        "https://lh3.googleusercontent.com/aida-public/AB6AXuAQi4nkQy-f8I2R81RfYoJWR_88V2AvzrjzFw24YXqnWHHeaCRc8K6_bG1HIspY5cQulEj_a1tx7pGmkUPriiQWoygwkwNyuacPItdT9b2cEZyWDCiDof9zpNtQAchMmztnb3HCfafJGJmjJ-9fFGkG5MjaNEFg3rK00805IhD2RkVgeGbVGpukh36r1cSC7Kg6nIOzIGrxjPUB1lgbT8yJUo5g6ZPTUyls0LfvWMP2RLD9HZvQS_ianYQ-MzfMJ3Av5vHjpKZa_Ew",
                     },
                     {
                       name: "Michael Brown",
                       role: "Lead Product Manager",
-                      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuD2K73RblqWAdgggWQSTJ-Q-ZmVMO7ODefj_zk4Q7aZ-2fntFhGxpAUzlMcdSB63o-giskdIRDgnXzc2wbXGKsIb8qos6NDqFhR8xyPsMm84zLQQ2ZGk_Q47vkkFv964AAWIppwPv24iHYGE4rWZKNY8uHy5-2VXWHTJ2_rLn2wxC7xolPldjS5dhuC5iwuRjZCmNqeAdJdMNeLARWsUhVoxKQ9Yq0xcYOnZdfEGuRIidOeD_cVMUvPOTjxk8WgeTVLPOOOFAEtWRQ"
+                      image:
+                        "https://lh3.googleusercontent.com/aida-public/AB6AXuD2K73RblqWAdgggWQSTJ-Q-ZmVMO7ODefj_zk4Q7aZ-2fntFhGxpAUzlMcdSB63o-giskdIRDgnXzc2wbXGKsIb8qos6NDqFhR8xyPsMm84zLQQ2ZGk_Q47vkkFv964AAWIppwPv24iHYGE4rWZKNY8uHy5-2VXWHTJ2_rLn2wxC7xolPldjS5dhuC5iwuRjZCmNqeAdJdMNeLARWsUhVoxKQ9Yq0xcYOnZdfEGuRIidOeD_cVMUvPOTjxk8WgeTVLPOOOFAEtWRQ",
                     },
                     {
                       name: "Emily Rodriguez",
                       role: "Senior UX Researcher",
-                      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAq3E5qtJ5-DP0P_qyBb_fYzEkPiip4P4eDcv5Ewq8FWfRK5-iePjZIfUeLJpwKsyhmekcQifed1-wa9mkXc29CPzlRZHvgcgDwYxll9FaNbdRk-oFT8eUu_K5lt5vYaOOvOE_RSirTH0P00fk1t-1gxHrJXS2g_eHPEex4xutiXEk10tYOWJ89VAxAGWusmkb2UeJAmGs69IzMtYyxaZpcbfKQD63IbAfMpu5ZsxXUaqYhP5gsXn-J4Ctz0PzpUq1ssZh0yOfqCJY"
-                    }
+                      image:
+                        "https://lh3.googleusercontent.com/aida-public/AB6AXuAq3E5qtJ5-DP0P_qyBb_fYzEkPiip4P4eDcv5Ewq8FWfRK5-iePjZIfUeLJpwKsyhmekcQifed1-wa9mkXc29CPzlRZHvgcgDwYxll9FaNbdRk-oFT8eUu_K5lt5vYaOOvOE_RSirTH0P00fk1t-1gxHrJXS2g_eHPEex4xutiXEk10tYOWJ89VAxAGWusmkb2UeJAmGs69IzMtYyxaZpcbfKQD63IbAfMpu5ZsxXUaqYhP5gsXn-J4Ctz0PzpUq1ssZh0yOfqCJY",
+                    },
                   ].map((member) => (
                     <div key={member.name} className="flex items-center gap-4">
                       <div
@@ -219,7 +266,9 @@ export default function JobDetailPage() {
                       />
                       <div>
                         <p className="font-semibold">{member.name}</p>
-                        <p className="text-sm text-muted-foreground">{member.role}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {member.role}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -230,5 +279,5 @@ export default function JobDetailPage() {
         </div>
       </div>
     </main>
-  )
+  );
 }

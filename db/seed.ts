@@ -1,0 +1,258 @@
+import { hash } from "bcryptjs";
+import { db } from "./index";
+import {
+  users,
+  categories,
+  courses,
+  modules,
+  lessons,
+  enrollments,
+  lessonProgress,
+  reviews,
+  aiContent,
+  notifications,
+  userSkills,
+  certificates,
+  jobs,
+} from "./schema";
+
+async function seed() {
+  console.log("🌱 Seeding SkillForge...");
+
+  const password = await hash("password123", 10);
+
+  /* ---------------- USERS ---------------- */
+  const userData = await db
+    .insert(users)
+    .values([
+      {
+        name: "Ali Raza",
+        email: "ali@example.com",
+        passwordHash: password,
+        role: "student",
+      },
+      {
+        name: "Sara Khan",
+        email: "sara@example.com",
+        passwordHash: password,
+        role: "instructor",
+      },
+      {
+        name: "Admin User",
+        email: "admin@example.com",
+        passwordHash: password,
+        role: "admin",
+      },
+    ])
+    .returning();
+
+  const [ali, sara] = userData;
+
+  /* ---------------- CATEGORIES ---------------- */
+  const categoryData = await db
+    .insert(categories)
+    .values([
+      { title: "Web Development", slug: "web-development" },
+      { title: "Data Science", slug: "data-science" },
+      { title: "AI & Machine Learning", slug: "ai-machine-learning" },
+    ])
+    .returning();
+
+  const webDevCategory = categoryData[0];
+
+  /* ---------------- COURSES ---------------- */
+  const courseData = await db
+    .insert(courses)
+    .values([
+      {
+        title: "Complete JavaScript Bootcamp",
+        slug: "complete-javascript-bootcamp",
+        description: "Master JavaScript from beginner to advanced.",
+        thumbnail: "/images/js.png",
+        categoryId: webDevCategory.id,
+        instructorId: sara.id,
+        level: "beginner",
+        price: 29.99,
+      },
+      {
+        title: "HTML & CSS Mastery",
+        slug: "html-css-mastery",
+        description: "Learn modern HTML & CSS with practical projects.",
+        thumbnail: "/images/css.png",
+        categoryId: webDevCategory.id,
+        instructorId: sara.id,
+        level: "beginner",
+        price: 19.99,
+      },
+    ])
+    .returning();
+
+  const jsCourse = courseData[0];
+  const cssCourse = courseData[1];
+
+  /* ---------------- MODULES ---------------- */
+  const moduleData = await db
+    .insert(modules)
+    .values([
+      { courseId: jsCourse.id, title: "JavaScript Basics", position: 1 },
+      { courseId: jsCourse.id, title: "Functions & Scope", position: 2 },
+
+      { courseId: cssCourse.id, title: "HTML Essentials", position: 1 },
+      { courseId: cssCourse.id, title: "CSS Core Concepts", position: 2 },
+    ])
+    .returning();
+
+  const jsModule1 = moduleData[0];
+  const jsModule2 = moduleData[1];
+  const cssModule1 = moduleData[2];
+  const cssModule2 = moduleData[3];
+
+  /* ---------------- LESSONS ---------------- */
+  await db.insert(lessons).values([
+    {
+      moduleId: jsModule1.id,
+      title: "Variables & Data Types",
+      content: "Intro to var, let, const",
+      position: 1,
+    },
+    {
+      moduleId: jsModule1.id,
+      title: "Operators",
+      content: "Arithmetic, logical & comparison operators",
+      position: 2,
+    },
+    {
+      moduleId: jsModule2.id,
+      title: "Function Declarations",
+      content: "Understanding function declaration & expressions",
+      position: 1,
+    },
+
+    {
+      moduleId: cssModule1.id,
+      title: "HTML Structure",
+      content: "Understanding tags, elements, attributes",
+      position: 1,
+    },
+    {
+      moduleId: cssModule2.id,
+      title: "CSS Selectors",
+      content: "Learn class, id & attribute selectors",
+      position: 1,
+    },
+  ]);
+
+  /* ---------------- ENROLLMENTS ---------------- */
+  await db.insert(enrollments).values([
+    { userId: ali.id, courseId: jsCourse.id },
+    { userId: ali.id, courseId: cssCourse.id },
+  ]);
+
+  /* ---------------- PROGRESS ---------------- */
+  await db.insert(lessonProgress).values([
+    { userId: ali.id, lessonId: 1, isCompleted: true },
+    { userId: ali.id, lessonId: 2, isCompleted: false },
+  ]);
+
+  /* ---------------- REVIEWS ---------------- */
+  await db.insert(reviews).values([
+    {
+      courseId: jsCourse.id,
+      userId: ali.id,
+      rating: 5,
+      comment: "Amazing course! Very beginner-friendly.",
+    },
+    {
+      courseId: cssCourse.id,
+      userId: ali.id,
+      rating: 4,
+      comment: "Great explanations and examples.",
+    },
+  ]);
+
+  /* ---------------- AI CONTENT ---------------- */
+  await db.insert(aiContent).values([
+    {
+      userId: ali.id,
+      type: "summary",
+      prompt: "Explain JavaScript closures.",
+      result: "A closure is a function that remembers its outer variables.",
+    },
+  ]);
+
+  /* ---------------- NOTIFICATIONS ---------------- */
+  await db.insert(notifications).values([
+    {
+      userId: ali.id,
+      title: "Course Enrollment",
+      message: "You enrolled in Complete JavaScript Bootcamp!",
+    },
+    {
+      userId: ali.id,
+      title: "Lesson Completed",
+      message: "You completed Variables & Data Types.",
+    },
+  ]);
+
+  /* ---------------- USER SKILLS ---------------- */
+  await db.insert(userSkills).values([
+    { userId: ali.id, skill: "JavaScript", level: "beginner" },
+    { userId: ali.id, skill: "HTML", level: "intermediate" },
+  ]);
+
+  /* ---------------- CERTIFICATES ---------------- */
+  await db.insert(certificates).values([
+    {
+      userId: ali.id,
+      courseId: jsCourse.id,
+      certificateUrl: "/certs/js-cert.pdf",
+    },
+  ]);
+
+  /* ---------------- JOBS ---------------- */
+  await db.insert(jobs).values([
+      {
+        title: "Senior Frontend Engineer",
+        company: "Stripe",
+        location: "San Francisco, CA",
+        match: 92,
+        logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuBOMUVhL9_7VevGCdmL2pS29udklZURm9267i2Z1FsJqVsdWxySZtMxyXkSULSsQVZKX8tScBsLe80P-tHivpGDqFWdKq3ocwLbCcpuaGcghyKacQtsgpbPZkH-rtZaJbcYDzZcmvJzfMTYmE3QkL3AJO186iAfKP2nlKnk3ALuUoYmwwXaiERPW7I7SMplAlChdt8aVtkmq-ewQmgqsS1DH7Eh-r6v5Z-iYh7CXekMFZPdYyea4Vlb-xdL0gvBaQKCHDjL2gPu5_g",
+        tags: "React,TypeScript,GraphQL,Next.js",
+        posted: "2 days ago",
+      },
+      {
+        title: "Product Manager, AI",
+        company: "Google",
+        location: "Remote",
+        match: 85,
+        logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuCsiNkEz71PbqjsZTdRwqiO1e8r5ZRt-E0CXu7RZ9E2blpHawycMDxUB5T6RcZHRqoWf8GrWU9NxXr3YIX9yEozT2l87cw8ve-1lPPEYLjXxRN95VCh6LwhVnNldTRhXoy9QeY-jUnEjItuF94fHmQ_QpbDxFX86lrCeafDiI3EIZs2fxAXrSXsjDJ0KN0mysDlCOgMhOtwxIgfFHxmbGWtk-1HfjuqmT2-HqaR5w0f7oLHJoW6H1zArqjJZIbJZBiWAC1fCa9dOw0",
+        tags: "Machine Learning,Product Strategy,Agile",
+        posted: "5 days ago",
+      },
+      {
+        title: "UX/UI Designer",
+        company: "Figma",
+        location: "New York, NY",
+        match: 81,
+        logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuD_FsaXlvV46aVGminWUerEEDcDvkCg9tu1PcPWguA41pN3H1nYHHF_NCD0rw-Wmxf0jNVvULXS7ANC8Ba-oME_jpfN1_3ByzMtQxMU7HQzMvnPmepQP-NMq_9liYT6zlfWS95v65DLApw-qYSuwknZC5_4JrbSlWnX4N-dTQDQeThX7DgXqUskOq6J3N97Kax1nXqpeZljWydvP5R6fUeR42xx3oN6RXzaNuT-MKiJIL__c37-hZhmLOYrbISz5YLoIUyDwNF0lPI",
+        tags: "Figma,User Research,Prototyping",
+        posted: "1 week ago",
+      },
+      {
+        title: "Data Scientist",
+        company: "Shopify",
+        location: "Hybrid",
+        match: 78,
+        logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuBChPPlG3G5-1Bh3p4AVclBznyOSYrowStl_FwRpgj7rk2_eyNVF3Gid5XP6PzTf0WfWQibgIZnhGIFq6_84kf3fvyEljcehvtFkjDx6CA230NZrH8a7BaBG7cKBgG-0YOCij735NGibnFUM9u5zeuoUyozPHyvn0-dtaMagPAsMGvNE4iX7OD5TQALFvv3kN2IfOVWxkPyQAVHnaX0XMNcg3lZSlZm0O40ZxiZDCQTHFap8r_pgW4rkX4C7_PF4YFL58nRBpuHgVM",
+        tags: "Python,SQL,Tableau,Statistics",
+        posted: "3 days ago",
+      },
+    ]);
+
+  console.log("✅ Seeding completed!");
+}
+
+seed().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

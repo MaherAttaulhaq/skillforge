@@ -128,3 +128,15 @@ export const certificates = sqliteTable("certificates", {
   certificateUrl: text("certificate_url").notNull(),
   issueDate: text("issue_date").default(sql`CURRENT_TIMESTAMP`),
 });
+
+/* ---------------- JOBS ---------------- */
+export const jobs = sqliteTable("jobs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  title: text("title").notNull(),
+  company: text("company").notNull(),
+  location: text("location").notNull(),
+  match: integer("match"),
+  logo: text("logo").notNull(),
+  tags: text("tags").notNull(),
+  posted: text("posted").notNull(),
+});
