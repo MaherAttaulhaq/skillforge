@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { sqliteTable, integer, text, real, primaryKey} from 'drizzle-orm/sqlite-core';
+import { sqliteTable, integer, text, real, primaryKey } from 'drizzle-orm/sqlite-core';
 
 
 /* ---------------- USERS ---------------- */
@@ -139,4 +139,16 @@ export const jobs = sqliteTable("jobs", {
   logo: text("logo").notNull(),
   tags: text("tags").notNull(),
   posted: text("posted").notNull(),
+  description: text("description"),
+  requirements: text("requirements"),
+  benefits: text("benefits"),
+  apply: text("apply"),
+  salary: text("salary"),
+  type: text("type"), // Full-time, Part-time, Contract
+  workMode: text("work_mode"), // Remote, On-site, Hybrid
+  experience: text("experience"), // e.g. "5+ Years"
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
+  deletedAt: text("deleted_at"),
+  isDeleted: integer("is_deleted", { mode: "boolean" }).default(false),
 });

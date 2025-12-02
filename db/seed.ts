@@ -211,43 +211,71 @@ async function seed() {
 
   /* ---------------- JOBS ---------------- */
   await db.insert(jobs).values([
-      {
-        title: "Senior Frontend Engineer",
-        company: "Stripe",
-        location: "San Francisco, CA",
-        match: 92,
-        logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuBOMUVhL9_7VevGCdmL2pS29udklZURm9267i2Z1FsJqVsdWxySZtMxyXkSULSsQVZKX8tScBsLe80P-tHivpGDqFWdKq3ocwLbCcpuaGcghyKacQtsgpbPZkH-rtZaJbcYDzZcmvJzfMTYmE3QkL3AJO186iAfKP2nlKnk3ALuUoYmwwXaiERPW7I7SMplAlChdt8aVtkmq-ewQmgqsS1DH7Eh-r6v5Z-iYh7CXekMFZPdYyea4Vlb-xdL0gvBaQKCHDjL2gPu5_g",
-        tags: "React,TypeScript,GraphQL,Next.js",
-        posted: "2 days ago",
-      },
-      {
-        title: "Product Manager, AI",
-        company: "Google",
-        location: "Remote",
-        match: 85,
-        logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuCsiNkEz71PbqjsZTdRwqiO1e8r5ZRt-E0CXu7RZ9E2blpHawycMDxUB5T6RcZHRqoWf8GrWU9NxXr3YIX9yEozT2l87cw8ve-1lPPEYLjXxRN95VCh6LwhVnNldTRhXoy9QeY-jUnEjItuF94fHmQ_QpbDxFX86lrCeafDiI3EIZs2fxAXrSXsjDJ0KN0mysDlCOgMhOtwxIgfFHxmbGWtk-1HfjuqmT2-HqaR5w0f7oLHJoW6H1zArqjJZIbJZBiWAC1fCa9dOw0",
-        tags: "Machine Learning,Product Strategy,Agile",
-        posted: "5 days ago",
-      },
-      {
-        title: "UX/UI Designer",
-        company: "Figma",
-        location: "New York, NY",
-        match: 81,
-        logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuD_FsaXlvV46aVGminWUerEEDcDvkCg9tu1PcPWguA41pN3H1nYHHF_NCD0rw-Wmxf0jNVvULXS7ANC8Ba-oME_jpfN1_3ByzMtQxMU7HQzMvnPmepQP-NMq_9liYT6zlfWS95v65DLApw-qYSuwknZC5_4JrbSlWnX4N-dTQDQeThX7DgXqUskOq6J3N97Kax1nXqpeZljWydvP5R6fUeR42xx3oN6RXzaNuT-MKiJIL__c37-hZhmLOYrbISz5YLoIUyDwNF0lPI",
-        tags: "Figma,User Research,Prototyping",
-        posted: "1 week ago",
-      },
-      {
-        title: "Data Scientist",
-        company: "Shopify",
-        location: "Hybrid",
-        match: 78,
-        logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuBChPPlG3G5-1Bh3p4AVclBznyOSYrowStl_FwRpgj7rk2_eyNVF3Gid5XP6PzTf0WfWQibgIZnhGIFq6_84kf3fvyEljcehvtFkjDx6CA230NZrH8a7BaBG7cKBgG-0YOCij735NGibnFUM9u5zeuoUyozPHyvn0-dtaMagPAsMGvNE4iX7OD5TQALFvv3kN2IfOVWxkPyQAVHnaX0XMNcg3lZSlZm0O40ZxiZDCQTHFap8r_pgW4rkX4C7_PF4YFL58nRBpuHgVM",
-        tags: "Python,SQL,Tableau,Statistics",
-        posted: "3 days ago",
-      },
-    ]);
+    {
+      title: "Senior Frontend Engineer",
+      company: "Stripe",
+      location: "San Francisco, CA",
+      match: 92,
+      logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuBOMUVhL9_7VevGCdmL2pS29udklZURm9267i2Z1FsJqVsdWxySZtMxyXkSULSsQVZKX8tScBsLe80P-tHivpGDqFWdKq3ocwLbCcpuaGcghyKacQtsgpbPZkH-rtZaJbcYDzZcmvJzfMTYmE3QkL3AJO186iAfKP2nlKnk3ALuUoYmwwXaiERPW7I7SMplAlChdt8aVtkmq-ewQmgqsS1DH7Eh-r6v5Z-iYh7CXekMFZPdYyea4Vlb-xdL0gvBaQKCHDjL2gPu5_g",
+      tags: "React,TypeScript,GraphQL,Next.js",
+      posted: "2 days ago",
+      salary: "$150,000 - $220,000",
+      type: "Full-time",
+      workMode: "Remote",
+      experience: "5+ Years",
+      description: "As a Senior Frontend Engineer at Stripe, you will be responsible for leading frontend projects from concept to launch. You'll work closely with product managers, engineers, and other stakeholders to create intuitive, elegant, and effective user experiences for our global customer base.",
+      requirements: "5+ years of experience in frontend development. Proficiency in React, TypeScript, and modern frontend tools. Experience with GraphQL and Next.js is a plus.",
+      benefits: "Competitive salary, equity, health insurance, remote work options, and more."
+    },
+    {
+      title: "Product Manager, AI",
+      company: "Google",
+      location: "Remote",
+      match: 85,
+      logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuCsiNkEz71PbqjsZTdRwqiO1e8r5ZRt-E0CXu7RZ9E2blpHawycMDxUB5T6RcZHRqoWf8GrWU9NxXr3YIX9yEozT2l87cw8ve-1lPPEYLjXxRN95VCh6LwhVnNldTRhXoy9QeY-jUnEjItuF94fHmQ_QpbDxFX86lrCeafDiI3EIZs2fxAXrSXsjDJ0KN0mysDlCOgMhOtwxIgfFHxmbGWtk-1HfjuqmT2-HqaR5w0f7oLHJoW6H1zArqjJZIbJZBiWAC1fCa9dOw0",
+      tags: "Machine Learning,Product Strategy,Agile",
+      posted: "5 days ago",
+      salary: "$180,000 - $250,000",
+      type: "Full-time",
+      workMode: "Remote",
+      experience: "7+ Years",
+      description: "Join Google's AI team to shape the future of intelligent products. You will define product strategy, work with engineering teams to build AI-powered features, and launch products that impact millions of users.",
+      requirements: "7+ years of product management experience. Strong background in AI/ML technologies. Excellent communication and leadership skills.",
+      benefits: "World-class benefits, including health, dental, vision, 401k, and more."
+    },
+    {
+      title: "UX/UI Designer",
+      company: "Figma",
+      location: "New York, NY",
+      match: 81,
+      logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuD_FsaXlvV46aVGminWUerEEDcDvkCg9tu1PcPWguA41pN3H1nYHHF_NCD0rw-Wmxf0jNVvULXS7ANC8Ba-oME_jpfN1_3ByzMtQxMU7HQzMvnPmepQP-NMq_9liYT6zlfWS95v65DLApw-qYSuwknZC5_4JrbSlWnX4N-dTQDQeThX7DgXqUskOq6J3N97Kax1nXqpeZljWydvP5R6fUeR42xx3oN6RXzaNuT-MKiJIL__c37-hZhmLOYrbISz5YLoIUyDwNF0lPI",
+      tags: "Figma,User Research,Prototyping",
+      posted: "1 week ago",
+      salary: "$120,000 - $160,000",
+      type: "Full-time",
+      workMode: "On-site",
+      experience: "3+ Years",
+      description: "Figma is looking for a talented UX/UI Designer to join our growing team. You will design beautiful and functional interfaces, conduct user research, and collaborate with product teams to deliver exceptional user experiences.",
+      requirements: "3+ years of experience in UX/UI design. Proficiency in Figma and other design tools. Strong portfolio showcasing your design process and work.",
+      benefits: "Competitive salary, stock options, health benefits, and a creative work environment."
+    },
+    {
+      title: "Data Scientist",
+      company: "Shopify",
+      location: "Hybrid",
+      match: 78,
+      logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuBChPPlG3G5-1Bh3p4AVclBznyOSYrowStl_FwRpgj7rk2_eyNVF3Gid5XP6PzTf0WfWQibgIZnhGIFq6_84kf3fvyEljcehvtFkjDx6CA230NZrH8a7BaBG7cKBgG-0YOCij735NGibnFUM9u5zeuoUyozPHyvn0-dtaMagPAsMGvNE4iX7OD5TQALFvv3kN2IfOVWxkPyQAVHnaX0XMNcg3lZSlZm0O40ZxiZDCQTHFap8r_pgW4rkX4C7_PF4YFL58nRBpuHgVM",
+      tags: "Python,SQL,Tableau,Statistics",
+      posted: "3 days ago",
+      salary: "$130,000 - $170,000",
+      type: "Contract",
+      workMode: "Hybrid",
+      experience: "4+ Years",
+      description: "Shopify is seeking a Data Scientist to help us make data-driven decisions. You will analyze large datasets, build predictive models, and communicate insights to stakeholders to drive business growth.",
+      requirements: "4+ years of experience in data science. Proficiency in Python, SQL, and data visualization tools. Strong analytical and problem-solving skills.",
+      benefits: "Flexible work arrangements, professional development opportunities, and a collaborative team culture."
+    },
+  ]);
 
   console.log("✅ Seeding completed!");
 }

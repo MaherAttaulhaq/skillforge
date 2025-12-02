@@ -15,6 +15,20 @@
       "when": 1764578864649,
       "tag": "0001_abnormal_exiles",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1764660398287,
+      "tag": "0002_true_umar",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1764660611050,
+      "tag": "0003_public_lester",
+      "breakpoints": true
     }
   ]
 }
