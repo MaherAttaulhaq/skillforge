@@ -13,9 +13,19 @@ import {
 // import { submitForm } from "@/app/actions/form";
 import { Verified, Award, FileText, GraduationCap } from "lucide-react";
 // import { useRef } from "react";
+import Link from "next/link";
+import { db } from "@/db";
+import { users } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
-export default function ProfilePage() {
-    // let ref = useRef<HTMLFormElement>(null);
+async function getUser() {
+  const userId = 1; // Hardcoded user ID
+  const user = await db.select().from(users).where(eq(users.id, userId)).get();
+  return user;
+}
+
+export default async function ProfilePage() {
+  const user = await getUser();
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mx-auto max-w-7xl">
@@ -30,22 +40,24 @@ export default function ProfilePage() {
                   <div className="relative">
                     <Avatar className="h-24 w-24 ring-4 ring-primary/20">
                       <AvatarImage
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuAcHjvgw2NcP45qzQ6xCiLfeenAjTV8z9Up-rzqlLQCqzBFRjZ9oPwo-poABdkIWN7fw0BOEq3pOtPedIoLfDTqjbm2wD4GZV1tKCRf-n1bQqdIZWF55uzhPIqNrpDEOCrGgtHpocTnIwoke6FLjHpXZoP0B6Oi9GYpiux5SQveI7Z0AonUD7AZ_JXmeHLlbIl-dd5dBNkTn53EuwASxSI8ZNE885WQaK717FQilicr_p4geNcBJbsewH05E_fe3NsrdhcQzTTzLgM"
-                        alt="Alex Doe"
+                        src={user?.avatar ?? "https://github.com/shadcn.png"}
+                        alt={user?.name ?? "User"}
                       />
-                      <AvatarFallback>AD</AvatarFallback>
+                      <AvatarFallback>{user?.name?.[0] ?? "U"}</AvatarFallback>
                     </Avatar>
                     <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border-4 border-card bg-accent text-white">
                       <Verified className="h-4 w-4" />
                     </div>
                   </div>
                   <div className="flex flex-col">
-                    <p className="text-xl font-bold tracking-tight">Alex Doe</p>
+                    <p className="text-xl font-bold tracking-tight">{user?.name}</p>
                     <p className="text-sm text-muted-foreground">
                       Senior Software Engineer
                     </p>
                   </div>
-                  <Button className="w-full">Edit Profile</Button>
+                  <Link href="/profile/edit" className="w-full">
+                    <Button className="w-full">Edit Profile</Button>
+                  </Link>
                 </CardContent>
               </Card>
               <Card className="shadow-sm">
