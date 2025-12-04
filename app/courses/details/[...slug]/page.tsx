@@ -23,7 +23,7 @@ import {
   users as usersTable,
 } from "@/db/schema";
 import { db } from "@/db";
-import { eq } from "drizzle-orm";
+import { eq, and, ne } from "drizzle-orm";
 
 interface params {
   slug?: string[];
@@ -47,6 +47,7 @@ export default async function CourseDetailPage({
       thumbnail: coursesTable.thumbnail,
       level: coursesTable.level,
       price: coursesTable.price,
+      categoryId: coursesTable.categoryId,
       categoryTitle: categoriesTable.title,
       instructorName: usersTable.name,
     })
@@ -68,6 +69,25 @@ export default async function CourseDetailPage({
       </div>
     );
   }
+
+  const relatedCourses = course.categoryId ? await db
+    .select({
+      id: coursesTable.id,
+      title: coursesTable.title,
+      slug: coursesTable.slug,
+      thumbnail: coursesTable.thumbnail,
+      level: coursesTable.level,
+      categoryTitle: categoriesTable.title,
+    })
+    .from(coursesTable)
+    .leftJoin(categoriesTable, eq(coursesTable.categoryId, categoriesTable.id))
+    .where(
+      and(
+        eq(coursesTable.categoryId, course.categoryId),
+        ne(coursesTable.id, course.id)
+      )
+    )
+    .limit(3) : [];
 
   // Fetch modules with lessons
   const modules = await db
@@ -168,69 +188,6 @@ export default async function CourseDetailPage({
                 </div>
               </div>
             </div>
-            <div className="w-full">
-              <div className="border-b">
-                <nav className="-mb-px flex space-x-6">
-                  <Link
-                    href="#"
-                    className="border-b-2 border-primary py-3 px-1 text-sm font-medium text-primary"
-                  >
-                    Overview
-                  </Link>
-                  <Link
-                    href="#"
-                    className="border-b-2 border-transparent py-3 px-1 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-border"
-                  >
-                    Q&A
-                  </Link>
-                  <Link
-                    href="#"
-                    className="border-b-2 border-transparent py-3 px-1 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-border"
-                  >
-                    My Notes
-                  </Link>
-                </nav>
-              </div>
-              <div className="py-6">
-                <div className="prose dark:prose-invert max-w-none">
-                  <h3 className="text-lg font-bold">About this lesson</h3>
-                  <p className="text-muted-foreground">
-                    {currentLesson?.content ||
-                      course.description ||
-                      "In this course, you'll learn the fundamentals and advanced concepts."}
-                  </p>
-                  {course.instructorName && (
-                    <>
-                      <h4 className="text-md font-bold mt-4">Instructor</h4>
-                      <p className="text-muted-foreground">
-                        {course.instructorName}
-                      </p>
-                    </>
-                  )}
-                  <h4 className="text-md font-bold mt-4">Resources</h4>
-                  <ul className="list-none pl-0 space-y-2">
-                    <li>
-                      <Link
-                        href="#"
-                        className="flex items-center gap-2 text-primary hover:underline"
-                      >
-                        <Download className="h-4 w-4" />
-                        Downloadable Source Code (.zip)
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        href="#"
-                        className="flex items-center gap-2 text-primary hover:underline"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                        Official Documentation
-                      </Link>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
         <aside className="col-span-12 lg:col-span-4 xl:col-span-3">
@@ -245,72 +202,72 @@ export default async function CourseDetailPage({
                 </div>
                 <Progress value={progressPercentage} className="h-2" />
               </div>
-              {modulesWithLessons.length > 0 ? (
-                <Accordion
-                  type="single"
-                  collapsible
-                  defaultValue="item-0"
-                  className="w-full"
-                >
-                  {modulesWithLessons.map((module, index) => (
-                    <AccordionItem
-                      key={module.id}
-                      value={`item-${index}`}
-                      className="border-b-0"
-                    >
-                      <AccordionTrigger className="hover:no-underline py-2">
-                        <div className="flex flex-col items-start gap-1 text-left">
-                          <span className="font-bold text-sm">
-                            {module.position}. {module.title}
-                          </span>
-                          <span className="text-xs text-muted-foreground font-normal">
-                            {module.lessons.length} lesson
-                            {module.lessons.length !== 1 ? "s" : ""}
-                          </span>
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent>
-                        <div className="flex flex-col gap-1 mt-1">
-                          {module.lessons.map((lesson, lessonIndex) => (
-                            <Link
-                              key={lesson.id}
-                              href="#"
-                              className={`flex items-center gap-3 p-3 rounded-lg ${lessonIndex === 0 && index === 0
-                                  ? "bg-primary/10 text-primary"
-                                  : "hover:bg-muted text-muted-foreground"
-                                }`}
-                            >
-                              {lessonIndex === 0 && index === 0 ? (
-                                <PlayCircle className="h-5 w-5 shrink-0" />
-                              ) : (
-                                <CheckCircle className="h-5 w-5 shrink-0" />
-                              )}
-                              <div className="flex flex-col">
-                                <span className="text-sm font-medium">
-                                  {lesson.title}
-                                </span>
-                                {lesson.videoUrl && (
-                                  <span className="text-xs opacity-80">
-                                    Video
-                                  </span>
-                                )}
-                              </div>
-                            </Link>
-                          ))}
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
+            </CardContent>
+          </Card>
+          <Card className="mt-4">
+            <CardContent className="p-4">
+                <h3 className="text-lg font-bold mb-4">Modules</h3>
+                <Accordion type="multiple" defaultValue={modulesWithLessons.map(m => m.id.toString())} className="w-full">
+                    {modulesWithLessons.map((module) => (
+                        <AccordionItem key={module.id} value={module.id.toString()}>
+                            <AccordionTrigger className="font-bold text-lg">
+                                {module.title}
+                            </AccordionTrigger>
+                            <AccordionContent>
+                                <ul className="flex flex-col gap-2 mt-2">
+                                    {module.lessons.map((lesson) => (
+                                        <li
+                                            key={lesson.id}
+                                            className={`flex items-center justify-between p-3 rounded-md transition-colors ${
+                                                currentLesson?.id === lesson.id
+                                                    ? "bg-primary/10 text-primary"
+                                                    : "hover:bg-muted/50"
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <PlayCircle className="h-5 w-5" />
+                                                <span>{lesson.title}</span>
+                                            </div>
+                                            <CheckCircle className="h-5 w-5 text-green-500" />
+                                        </li>
+                                    ))}
+                                </ul>
+                            </AccordionContent>
+                        </AccordionItem>
+                    ))}
                 </Accordion>
-              ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No modules available yet.
-                </p>
-              )}
             </CardContent>
           </Card>
         </aside>
       </div>
+      {relatedCourses.length > 0 && (
+        <div className="mt-12">
+            <h2 className="text-3xl font-bold mb-6">Related Courses</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {relatedCourses.map((relatedCourse) => (
+                    <Link key={relatedCourse.id} href={`/courses/details/${relatedCourse.id}/${relatedCourse.slug}`}>
+                        <Card className="h-full flex flex-col overflow-hidden transition-transform transform hover:-translate-y-1 hover:shadow-lg">
+                            <div className="relative h-48 w-full bg-cover bg-center" style={{ backgroundImage: `url("${relatedCourse.thumbnail}")` }}>
+                                {!relatedCourse.thumbnail && (
+                                    <div className="h-48 bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+                                        <span className="text-muted-foreground">No Image</span>
+                                    </div>
+                                )}
+                            </div>
+                            <CardContent className="p-4 flex flex-col flex-grow">
+                                <p className="text-sm text-primary font-medium mb-1">{relatedCourse.categoryTitle}</p>
+                                <h3 className="text-lg font-bold mb-2 flex-grow">{relatedCourse.title}</h3>
+                                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                                    <p className="capitalize">{relatedCourse.level}</p>
+                                    <p>⭐ 4.5</p> 
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </Link>
+                ))}
+            </div>
+        </div>
+      )}
     </div>
   );
 }
