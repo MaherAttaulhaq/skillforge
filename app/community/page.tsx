@@ -67,9 +67,8 @@ export default async function CommunityPage() {
           .map((n) => n[0])
           .join("") || "DL",
       time: "1 day ago",
-      content: `Our team's ${
-        recentCourses[0]?.categoryTitle || "React"
-      } project is growing, and we're debating best practices. Looking for real-world insights from the community.`,
+      content: `Our team's ${recentCourses[0]?.categoryTitle || "React"
+        } project is growing, and we're debating best practices. Looking for real-world insights from the community.`,
       tags: [recentCourses[0]?.categoryTitle || "React", "Popular"],
       likes: 48,
       comments: 21,
