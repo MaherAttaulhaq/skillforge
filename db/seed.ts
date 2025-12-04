@@ -14,6 +14,8 @@ import {
   userSkills,
   certificates,
   jobs,
+  posts,
+  comments,
 } from "./schema";
 
 async function seed() {
@@ -274,6 +276,45 @@ async function seed() {
       description: "Shopify is seeking a Data Scientist to help us make data-driven decisions. You will analyze large datasets, build predictive models, and communicate insights to stakeholders to drive business growth.",
       requirements: "4+ years of experience in data science. Proficiency in Python, SQL, and data visualization tools. Strong analytical and problem-solving skills.",
       benefits: "Flexible work arrangements, professional development opportunities, and a collaborative team culture."
+    },
+  ]);
+
+  /* ---------------- POSTS ---------------- */
+  const postData = await db
+    .insert(posts)
+    .values([
+      {
+        title: "How to optimize a resume for AI screening tools?",
+        content:
+          "I'm applying for a tech role and I've heard that many companies use AI to screen resumes. What are some key strategies to make sure my resume gets past the initial screening and is seen by a human recruiter?",
+        authorId: ali.id,
+      },
+      {
+        title: "Best practices for state management in large React applications?",
+        content: `Our team's React project is growing, and we're debating best practices. Looking for real-world insights from the community.`,
+        authorId: sara.id,
+      },
+    ])
+    .returning();
+
+  const [post1, post2] = postData;
+
+  /* ---------------- COMMENTS ---------------- */
+  await db.insert(comments).values([
+    {
+      content: "Great question! I'd recommend focusing on keywords from the job description.",
+      postId: post1.id,
+      authorId: sara.id,
+    },
+    {
+      content: "I agree with Sara. Also, make sure your resume is in a simple, clean format that's easy for an ATS to parse.",
+      postId: post1.id,
+      authorId: ali.id,
+    },
+    {
+      content: "We've had a lot of success with Zustand in our projects. It's simple and scalable.",
+      postId: post2.id,
+      authorId: ali.id,
     },
   ]);
 

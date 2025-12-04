@@ -38,6 +38,30 @@ export const courses = sqliteTable("courses", {
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
+/* ---------------- POSTS ---------------- */
+export const posts = sqliteTable("posts", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  title: text("title").notNull(),
+  content: text("content"),
+  authorId: integer("author_id")
+    .references(() => users.id)
+    .notNull(),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+/* ---------------- COMMENTS ---------------- */
+export const comments = sqliteTable("comments", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  content: text("content").notNull(),
+  postId: integer("post_id")
+    .references(() => posts.id)
+    .notNull(),
+  authorId: integer("author_id")
+    .references(() => users.id)
+    .notNull(),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
 /* ---------------- MODULES ---------------- */
 export const modules = sqliteTable("modules", {
   id: integer("id").primaryKey({ autoIncrement: true }),
