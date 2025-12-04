@@ -70,24 +70,29 @@ export default async function CourseDetailPage({
     );
   }
 
-  const relatedCourses = course.categoryId ? await db
-    .select({
-      id: coursesTable.id,
-      title: coursesTable.title,
-      slug: coursesTable.slug,
-      thumbnail: coursesTable.thumbnail,
-      level: coursesTable.level,
-      categoryTitle: categoriesTable.title,
-    })
-    .from(coursesTable)
-    .leftJoin(categoriesTable, eq(coursesTable.categoryId, categoriesTable.id))
-    .where(
-      and(
-        eq(coursesTable.categoryId, course.categoryId),
-        ne(coursesTable.id, course.id)
-      )
-    )
-    .limit(3) : [];
+  const relatedCourses = course.categoryId
+    ? await db
+        .select({
+          id: coursesTable.id,
+          title: coursesTable.title,
+          slug: coursesTable.slug,
+          thumbnail: coursesTable.thumbnail,
+          level: coursesTable.level,
+          categoryTitle: categoriesTable.title,
+        })
+        .from(coursesTable)
+        .leftJoin(
+          categoriesTable,
+          eq(coursesTable.categoryId, categoriesTable.id)
+        )
+        .where(
+          and(
+            eq(coursesTable.categoryId, course.categoryId),
+            ne(coursesTable.id, course.id)
+          )
+        )
+        .limit(3)
+    : [];
 
   // Fetch modules with lessons
   const modules = await db
@@ -106,6 +111,7 @@ export default async function CourseDetailPage({
       return { ...module, lessons };
     })
   );
+  console.log(modulesWithLessons);
 
   // Calculate progress (for demo, set to 0)
   const totalLessons = modulesWithLessons.reduce(
@@ -160,7 +166,7 @@ export default async function CourseDetailPage({
                     }}
                   ></div>
                 ) : (
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20"></div>
+                  <div className="absolute inset-0 bg-linear-to-br from-primary/20 to-accent/20"></div>
                 )}
                 <Button
                   size="icon"
@@ -168,7 +174,7 @@ export default async function CourseDetailPage({
                 >
                   <Play className="h-8 w-8 ml-1" />
                 </Button>
-                <div className="absolute inset-x-0 bottom-0 px-4 py-3 bg-gradient-to-t from-black/80 to-transparent">
+                <div className="absolute inset-x-0 bottom-0 px-4 py-3 bg-linear-to-t from-black/80 to-transparent">
                   <div className="relative flex h-4 items-center justify-center group/progress">
                     <div className="h-1.5 w-full rounded-full bg-white/30">
                       <div
@@ -206,66 +212,82 @@ export default async function CourseDetailPage({
           </Card>
           <Card className="mt-4">
             <CardContent className="p-4">
-                <h3 className="text-lg font-bold mb-4">Modules</h3>
-                <Accordion type="multiple" defaultValue={modulesWithLessons.map(m => m.id.toString())} className="w-full">
-                    {modulesWithLessons.map((module) => (
-                        <AccordionItem key={module.id} value={module.id.toString()}>
-                            <AccordionTrigger className="font-bold text-lg">
-                                {module.title}
-                            </AccordionTrigger>
-                            <AccordionContent>
-                                <ul className="flex flex-col gap-2 mt-2">
-                                    {module.lessons.map((lesson) => (
-                                        <li
-                                            key={lesson.id}
-                                            className={`flex items-center justify-between p-3 rounded-md transition-colors ${
-                                                currentLesson?.id === lesson.id
-                                                    ? "bg-primary/10 text-primary"
-                                                    : "hover:bg-muted/50"
-                                            }`}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <PlayCircle className="h-5 w-5" />
-                                                <span>{lesson.title}</span>
-                                            </div>
-                                            <CheckCircle className="h-5 w-5 text-green-500" />
-                                        </li>
-                                    ))}
-                                </ul>
-                            </AccordionContent>
-                        </AccordionItem>
-                    ))}
-                </Accordion>
+              <h3 className="text-lg font-bold mb-4">Modules</h3>
+              <Accordion
+                type="multiple"
+                defaultValue={modulesWithLessons.map((m) => m.id.toString())}
+                className="w-full"
+              >
+                {modulesWithLessons.map((module) => (
+                  <AccordionItem key={module.id} value={module.id.toString()}>
+                    <AccordionTrigger className="font-bold text-lg">
+                      {module.title}
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <ul className="flex flex-col gap-2 mt-2">
+                        {module.lessons.map((lesson) => (
+                          <li
+                            key={lesson.id}
+                            className={`flex items-center justify-between p-3 rounded-md transition-colors ${
+                              currentLesson?.id === lesson.id
+                                ? "bg-primary/10 text-primary"
+                                : "hover:bg-muted/50"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <PlayCircle className="h-5 w-5" />
+                              <span>{lesson.title}</span>
+                            </div>
+                            <CheckCircle className="h-5 w-5 text-green-500" />
+                          </li>
+                        ))}
+                      </ul>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
             </CardContent>
           </Card>
         </aside>
       </div>
       {relatedCourses.length > 0 && (
         <div className="mt-12">
-            <h2 className="text-3xl font-bold mb-6">Related Courses</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {relatedCourses.map((relatedCourse) => (
-                    <Link key={relatedCourse.id} href={`/courses/details/${relatedCourse.id}/${relatedCourse.slug}`}>
-                        <Card className="h-full flex flex-col overflow-hidden transition-transform transform hover:-translate-y-1 hover:shadow-lg">
-                            <div className="relative h-48 w-full bg-cover bg-center" style={{ backgroundImage: `url("${relatedCourse.thumbnail}")` }}>
-                                {!relatedCourse.thumbnail && (
-                                    <div className="h-48 bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                                        <span className="text-muted-foreground">No Image</span>
-                                    </div>
-                                )}
-                            </div>
-                            <CardContent className="p-4 flex flex-col flex-grow">
-                                <p className="text-sm text-primary font-medium mb-1">{relatedCourse.categoryTitle}</p>
-                                <h3 className="text-lg font-bold mb-2 flex-grow">{relatedCourse.title}</h3>
-                                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                                    <p className="capitalize">{relatedCourse.level}</p>
-                                    <p>⭐ 4.5</p> 
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </Link>
-                ))}
-            </div>
+          <h2 className="text-3xl font-bold mb-6">Related Courses</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {relatedCourses.map((relatedCourse) => (
+              <Link
+                key={relatedCourse.id}
+                href={`/courses/details/${relatedCourse.id}/${relatedCourse.slug}`}
+              >
+                <Card className="h-full flex flex-col overflow-hidden transition-transform transform hover:-translate-y-1 hover:shadow-lg">
+                  <div
+                    className="relative h-48 w-full bg-cover bg-center"
+                    style={{
+                      backgroundImage: `url("${relatedCourse.thumbnail}")`,
+                    }}
+                  >
+                    {!relatedCourse.thumbnail && (
+                      <div className="h-48 bg-linear-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+                        <span className="text-muted-foreground">No Image</span>
+                      </div>
+                    )}
+                  </div>
+                  <CardContent className="p-4 flex flex-col flex-grow">
+                    <p className="text-sm text-primary font-medium mb-1">
+                      {relatedCourse.categoryTitle}
+                    </p>
+                    <h3 className="text-lg font-bold mb-2 flex-grow">
+                      {relatedCourse.title}
+                    </h3>
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <p className="capitalize">{relatedCourse.level}</p>
+                      <p>⭐ 4.5</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
         </div>
       )}
     </div>
