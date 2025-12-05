@@ -18,10 +18,15 @@ export async function addComment(postId: number, content: string) {
 }
 // make a form action to create a post
 export async function createPost(
-  prevState: { message: string; success?: boolean },
+  prevState: any,
   formData: FormData
-) {
-  const userId = 1; // Hardcoded user ID for now
+): Promise<{ message: string; success: boolean }> {
+  const user = await db.query.users.findFirst();
+  const userId = user?.id;
+
+  if (!userId) {
+    return { message: "No user found to create post.", success: false };
+  }
 
   const title = formData.get("title") as string;
   const content = formData.get("content") as string;

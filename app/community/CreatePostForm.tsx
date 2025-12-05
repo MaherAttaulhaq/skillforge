@@ -11,8 +11,7 @@ const initialState = {
   message: "",
 };
 
-// DEPRECATED: This file is outdated. Please use app/community/CreatePostForm.tsx instead.
-export function CreatePostOld() {
+export function CreatePostForm() {
   const [state, formAction] = useActionState(createPost, initialState);
 
   return (

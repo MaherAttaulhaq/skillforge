@@ -14,7 +14,7 @@ import { db } from "@/db";
 import { posts as postsTable, users, categories } from "@/db/schema";
 import { desc, eq } from "drizzle-orm";
 import { formatDistanceToNow } from "date-fns";
-
+import { NavLink } from "@/components/nav-link";
 
 export default async function CommunityPage() {
   // Fetch users for contributors and post authors
@@ -38,16 +38,16 @@ export default async function CommunityPage() {
     .orderBy(desc(postsTable.createdAt));
 
   // Generate dynamic posts from courses and users
-  const posts = postsData.map(post => {
-    let timeAgo = 'N/A';
+  const posts = postsData.map((post) => {
+    let timeAgo = "N/A";
     if (post.createdAt) {
       try {
         const date = new Date(post.createdAt);
         if (!isNaN(date.getTime())) {
-          timeAgo = formatDistanceToNow(date) + ' ago';
+          timeAgo = formatDistanceToNow(date) + " ago";
         }
       } catch (error) {
-        console.error('Invalid date:', post.createdAt);
+        console.error("Invalid date:", post.createdAt);
       }
     }
 
@@ -99,11 +99,12 @@ export default async function CommunityPage() {
                   Ask questions, share knowledge, and connect with peers.
                 </p>
               </div>
-
-              <Button className="gap-2 shadow-sm transition-transform duration-200 ease-in-out hover:scale-105">
-                <PlusCircle className="h-4 w-4" />
-                Create Post
-              </Button>
+              <NavLink href="/community/create-post">
+                <Button className="gap-2 shadow-sm transition-transform duration-200 ease-in-out hover:scale-105">
+                  <PlusCircle className="h-4 w-4" />
+                  Create Post
+                </Button>
+              </NavLink>
             </div>
             <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
               <div className="flex gap-2 overflow-x-auto pb-2">
