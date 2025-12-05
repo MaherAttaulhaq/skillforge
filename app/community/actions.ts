@@ -18,13 +18,19 @@ export async function addComment(postId: number, content: string) {
 }
 // make a form action to create a post
 export async function createPost(
-  prevState: { message: string },
+  prevState: { message: string; success?: boolean },
   formData: FormData
 ) {
   const userId = 1; // Hardcoded user ID for now
 
   const title = formData.get("title") as string;
   const content = formData.get("content") as string;
+  const tags = formData.get("tags") as string;
+
+  // Validate input
+  if (!title || !content) {
+    return { message: "Title and content are required", success: false };
+  }
 
   try {
     await db.insert(posts).values({
@@ -32,9 +38,17 @@ export async function createPost(
       content,
       authorId: userId,
     });
+
     revalidatePath("/community");
-    return { message: "Post created successfully" };
+    return {
+      message: "🎉 Post created successfully! Your post is now live.",
+      success: true
+    };
   } catch (error) {
-    return { message: "Failed to create post" };
+    console.error("Error creating post:", error);
+    return {
+      message: "Failed to create post. Please try again.",
+      success: false
+    };
   }
 }

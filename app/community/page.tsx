@@ -1,10 +1,8 @@
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-  Search,
   PlusCircle,
   ThumbsUp,
   MessageSquare,
@@ -13,8 +11,10 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { db } from "@/db";
-import { users, courses as coursesTable, categories } from "@/db/schema";
+import { posts as postsTable, users, categories } from "@/db/schema";
 import { desc, eq } from "drizzle-orm";
+import { formatDistanceToNow } from "date-fns";
+
 
 export default async function CommunityPage() {
   // Fetch users for contributors and post authors
@@ -23,74 +23,50 @@ export default async function CommunityPage() {
   // Fetch categories for trending tags
   const allCategories = await db.select().from(categories);
 
-  // Fetch recent courses to generate discussion topics
-  const recentCourses = await db
+  const postsData = await db
     .select({
-      id: coursesTable.id,
-      title: coursesTable.title,
-      categoryTitle: categories.title,
+      id: postsTable.id,
+      title: postsTable.title,
+      content: postsTable.content,
+      createdAt: postsTable.createdAt,
+      authorId: postsTable.authorId,
+      authorName: users.name,
+      authorAvatar: users.avatar,
     })
-    .from(coursesTable)
-    .leftJoin(categories, eq(coursesTable.categoryId, categories.id))
-    .orderBy(desc(coursesTable.createdAt))
-    .limit(3);
+    .from(postsTable)
+    .leftJoin(users, eq(postsTable.authorId, users.id))
+    .orderBy(desc(postsTable.createdAt));
 
   // Generate dynamic posts from courses and users
-  const posts = [
-    {
-      id: 1,
-      title: "How to optimize a resume for AI screening tools?",
-      author: allUsers[0]?.name || "Sarah Johnson",
-      authorAvatar: allUsers[0]?.avatar,
-      authorInitials:
-        allUsers[0]?.name
-          .split(" ")
-          .map((n) => n[0])
-          .join("") || "SJ",
-      time: "2 hours ago",
-      content:
-        "I'm applying for a tech role and I've heard that many companies use AI to screen resumes. What are some key strategies to make sure my resume gets past the initial screening and is seen by a human recruiter?",
+  const posts = postsData.map(post => {
+    let timeAgo = 'N/A';
+    if (post.createdAt) {
+      try {
+        const date = new Date(post.createdAt);
+        if (!isNaN(date.getTime())) {
+          timeAgo = formatDistanceToNow(date) + ' ago';
+        }
+      } catch (error) {
+        console.error('Invalid date:', post.createdAt);
+      }
+    }
+
+    return {
+      id: post.id,
+      title: post.title,
+      author: post.authorName || "Anonymous",
+      authorAvatar: post.authorAvatar,
+      authorInitials: (post.authorName || "Anonymous")
+        .split(" ")
+        .map((n) => n[0])
+        .join(""),
+      time: timeAgo,
+      content: post.content,
       tags: ["AI", "Resume", "Career Advice"],
       likes: 12,
       comments: 5,
-    },
-    {
-      id: 2,
-      title:
-        recentCourses[0]?.title ||
-        "Best practices for state management in large React applications?",
-      author: allUsers[1]?.name || "David Lee",
-      authorAvatar: allUsers[1]?.avatar,
-      authorInitials:
-        allUsers[1]?.name
-          .split(" ")
-          .map((n) => n[0])
-          .join("") || "DL",
-      time: "1 day ago",
-      content: `Our team's ${recentCourses[0]?.categoryTitle || "React"
-        } project is growing, and we're debating best practices. Looking for real-world insights from the community.`,
-      tags: [recentCourses[0]?.categoryTitle || "React", "Popular"],
-      likes: 48,
-      comments: 21,
-    },
-    {
-      id: 3,
-      title: "Common Behavioral Questions in FAANG Interviews",
-      author: allUsers[2]?.name || "Emily Chen",
-      authorAvatar: allUsers[2]?.avatar,
-      authorInitials:
-        allUsers[2]?.name
-          .split(" ")
-          .map((n) => n[0])
-          .join("") || "EC",
-      time: "3 days ago",
-      content:
-        "I have a final round interview coming up and I want to be prepared for the behavioral questions. Can anyone share some common ones and how to best structure answers using the STAR method?",
-      tags: ["Interview Tips"],
-      likes: 32,
-      comments: 15,
-    },
-  ];
+    };
+  });
 
   // Generate trending tags from categories
   const trendingTags = allCategories.map((cat, index) => ({
@@ -123,6 +99,7 @@ export default async function CommunityPage() {
                   Ask questions, share knowledge, and connect with peers.
                 </p>
               </div>
+
               <Button className="gap-2 shadow-sm transition-transform duration-200 ease-in-out hover:scale-105">
                 <PlusCircle className="h-4 w-4" />
                 Create Post

@@ -21,6 +21,23 @@ import {
 async function seed() {
   console.log("🌱 Seeding SkillForge...");
 
+  // Clear existing data
+  await db.delete(comments);
+  await db.delete(posts);
+  await db.delete(jobs);
+  await db.delete(certificates);
+  await db.delete(userSkills);
+  await db.delete(notifications);
+  await db.delete(aiContent);
+  await db.delete(reviews);
+  await db.delete(lessonProgress);
+  await db.delete(enrollments);
+  await db.delete(lessons);
+  await db.delete(modules);
+  await db.delete(courses);
+  await db.delete(categories);
+  await db.delete(users);
+
   const password = await hash("password123", 10);
 
   /* ---------------- USERS ---------------- */
@@ -293,6 +310,12 @@ async function seed() {
         title: "Best practices for state management in large React applications?",
         content: `Our team's React project is growing, and we're debating best practices. Looking for real-world insights from the community.`,
         authorId: sara.id,
+      },
+      {
+        title: "Common Behavioral Questions in FAANG Interviews",
+        content:
+          "I have a final round interview coming up and I want to be prepared for the behavioral questions. Can anyone share some common ones and how to best structure answers using the STAR method?",
+        authorId: ali.id,
       },
     ])
     .returning();
