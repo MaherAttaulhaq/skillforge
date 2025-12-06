@@ -18,7 +18,7 @@ export async function addComment(postId: number, content: string) {
 }
 // make a form action to create a post
 export async function createPost(
-  prevState: any,
+  prevState: { message: string } | undefined,
   formData: FormData
 ): Promise<{ message: string; success: boolean }> {
   const user = await db.query.users.findFirst();
