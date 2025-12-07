@@ -4,16 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useActionState } from "react";
+import { useFormState } from "react-dom";
 import { createPost } from "./actions";
 
 const initialState = {
   message: "",
+  success: false,
 };
 
 // DEPRECATED: This file is outdated. Please use app/community/CreatePostForm.tsx instead.
 export function CreatePostOld() {
-  const [state, formAction] = useActionState(createPost, initialState);
+  const [state, formAction] = useFormState(createPost, initialState);
 
   return (
     <Card>
