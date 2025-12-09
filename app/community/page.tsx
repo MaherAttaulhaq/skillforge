@@ -30,6 +30,7 @@ export default async function CommunityPage() {
       content: postsTable.content,
       createdAt: postsTable.createdAt,
       authorId: postsTable.authorId,
+      mediaUrl: postsTable.mediaUrl,
       authorName: users.name,
       authorAvatar: users.avatar,
     })
@@ -62,6 +63,7 @@ export default async function CommunityPage() {
         .join(""),
       time: timeAgo,
       content: post.content,
+      mediaUrl: post.mediaUrl,
       tags: ["AI", "Resume", "Career Advice"],
       likes: 12,
       comments: 5,
@@ -159,6 +161,24 @@ export default async function CommunityPage() {
                         <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
                           {post.content}
                         </p>
+                        {post.mediaUrl && (
+                          <div className="mt-3">
+                            {post.mediaUrl.endsWith(".mp4") ||
+                            post.mediaUrl.endsWith(".webm") ? (
+                              <video
+                                src={post.mediaUrl}
+                                controls
+                                className="w-full rounded-lg"
+                              />
+                            ) : (
+                              <img
+                                src={post.mediaUrl}
+                                alt={post.title}
+                                className="w-full rounded-lg"
+                              />
+                            )}
+                          </div>
+                        )}
                         <div className="mt-3 flex flex-wrap gap-2">
                           {post.tags.map((tag) => (
                             <Badge

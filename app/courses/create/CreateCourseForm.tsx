@@ -20,6 +20,7 @@ interface Lesson {
   id: string;
   title: string;
   content: string;
+  video?: File | null;
 }
 
 interface Module {
@@ -44,14 +45,13 @@ interface CreateCourseFormProps {
 }
 
 export function CreateCourseForm({ categories }: CreateCourseFormProps) {
-  // @ts-ignore
   const [state, formAction] = useActionState(createCourse, initialState);
   const [modules, setModules] = useState<Module[]>([
     {
       id: "1",
       title: "",
       description: "",
-      lessons: [{ id: "1", title: "", content: "" }],
+      lessons: [{ id: "1", title: "", content: "", video: null }],
     },
   ]);
 
@@ -62,7 +62,9 @@ export function CreateCourseForm({ categories }: CreateCourseFormProps) {
         id: Date.now().toString(),
         title: "",
         description: "",
-        lessons: [{ id: Date.now().toString(), title: "", content: "" }],
+        lessons: [
+          { id: Date.now().toString(), title: "", content: "", video: null },
+        ],
       },
     ]);
   };
@@ -80,7 +82,12 @@ export function CreateCourseForm({ categories }: CreateCourseFormProps) {
           ...m,
           lessons: [
             ...m.lessons,
-            { id: Date.now().toString(), title: "", content: "" },
+            {
+              id: Date.now().toString(),
+              title: "",
+              content: "",
+              video: null,
+            },
           ],
         };
       }
@@ -160,6 +167,22 @@ export function CreateCourseForm({ categories }: CreateCourseFormProps) {
                   </Select>
                 </div>
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="course-thumbnail">Course Thumbnail</Label>
+                <Input
+                  id="course-thumbnail"
+                  name="thumbnail"
+                  type="file"
+                  accept="image/*"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Upload a catchy image for your course (e.g., JPG, PNG).
+                </p>
+                <div className="text-red-500 text-sm">
+                 
+                 
+                </div>
+              </div>
               {state.message && (
                 <div className="text-red-500 text-sm">{state.message}</div>
               )}
@@ -204,6 +227,7 @@ export function CreateCourseForm({ categories }: CreateCourseFormProps) {
                   <div className="flex items-center gap-2">
                     <Input
                       placeholder={`Module ${moduleIndex + 1}: Title`}
+                      name={`modules[${moduleIndex}][title]`}
                       value={module.title}
                       onChange={(e) => {
                         const newModules = [...modules];
@@ -222,6 +246,7 @@ export function CreateCourseForm({ categories }: CreateCourseFormProps) {
                   </div>
                   <Textarea
                     placeholder="Module description..."
+                    name={`modules[${moduleIndex}][description]`}
                     rows={2}
                     value={module.description}
                     onChange={(e) => {
@@ -236,6 +261,7 @@ export function CreateCourseForm({ categories }: CreateCourseFormProps) {
                         <div className="flex items-center gap-2">
                           <Input
                             placeholder={`Lesson ${lessonIndex + 1}: Title`}
+                            name={`modules[${moduleIndex}][lessons][${lessonIndex}][title]`}
                             value={lesson.title}
                             onChange={(e) => {
                               const newModules = [...modules];
@@ -256,6 +282,7 @@ export function CreateCourseForm({ categories }: CreateCourseFormProps) {
                         </div>
                         <Textarea
                           placeholder="Lesson content..."
+                          name={`modules[${moduleIndex}][lessons][${lessonIndex}][content]`}
                           rows={3}
                           value={lesson.content}
                           onChange={(e) => {
@@ -266,6 +293,29 @@ export function CreateCourseForm({ categories }: CreateCourseFormProps) {
                             setModules(newModules);
                           }}
                         />
+                        <div className="space-y-2">
+                          <Label
+                            htmlFor={`lesson-video-${module.id}-${lesson.id}`}
+                          >
+                            Lesson Video (Optional)
+                          </Label>
+                          <Input
+                            id={`lesson-video-${module.id}-${lesson.id}`}
+                            name={`modules[${moduleIndex}][lessons][${lessonIndex}][video]`}
+                            type="file"
+                            accept="video/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const newModules = [...modules];
+                                newModules[moduleIndex].lessons[
+                                  lessonIndex
+                                ].video = file;
+                                setModules(newModules);
+                              }
+                            }}
+                          />
+                        </div>
                       </div>
                     ))}
                     <Button
@@ -321,7 +371,6 @@ export function CreateCourseForm({ categories }: CreateCourseFormProps) {
           </div>
         </div>
       </div>
-      <input type="hidden" name="modules" value={JSON.stringify(modules)} />
     </form>
   );
 }

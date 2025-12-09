@@ -46,6 +46,7 @@ export const posts = sqliteTable("posts", {
   authorId: integer("author_id")
     .references(() => users.id)
     .notNull(),
+  mediaUrl: text("media_url"),
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 

@@ -1,8 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { useActionState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,64 +8,60 @@ import { toast } from "sonner";
 import { submitAction } from "../actions/form";
 import { users } from "@/db/schema";
 import { InferSelectModel } from "drizzle-orm";
+import { useFormStatus } from "react-dom";
 
 type User = InferSelectModel<typeof users>;
 
-const formSchema = z.object({
-  name: z.string().min(2, {
-    message: "Name must be at least 2 characters.",
-  }),
-  avatar: z.string().url().optional(),
-});
+const initialState = {
+  message: "",
+  success: false,
+};
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" disabled={pending} className="w-full">
+      {pending ? "Saving..." : "Save Changes"}
+    </Button>
+  );
+}
 
 export function ProfileForm({ user }: { user: User | undefined }) {
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: user?.name ?? "",
-      avatar: user?.avatar ?? "",
-    },
-  });
+  const [state, formAction] = useActionState(submitAction, initialState);
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    const result = await submitAction({ name: values.name, avatar: values.avatar });
-    if (result.success) {
-      toast.success("Profile updated successfully!");
-    } else {
-      toast.error(result.message);
+  useEffect(() => {
+    if (state?.success) {
+      toast.success(state.message);
+    } else if (state?.message) {
+      toast.error(state.message);
     }
-  }
+  }, [state]);
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+    <form action={formAction} className="space-y-6">
       <div>
         <Label htmlFor="name" className="text-gray-700 dark:text-gray-300">
           Name
         </Label>
         <Input
           id="name"
-          {...form.register("name")}
+          name="name"
+          defaultValue={user?.name ?? ""}
           className="mt-1 block w-full"
         />
-        {form.formState.errors.name && (
-          <p className="mt-2 text-sm text-red-600">
-            {form.formState.errors.name.message}
-          </p>
-        )}
       </div>
       <div>
         <Label htmlFor="avatar" className="text-gray-700 dark:text-gray-300">
-          Avatar URL
+          Avatar
         </Label>
         <Input
           id="avatar"
-          {...form.register("avatar")}
+          name="avatar"
+          type="file"
           className="mt-1 block w-full"
         />
       </div>
-      <Button type="submit" className="w-full">
-        Save Changes
-      </Button>
+      <SubmitButton />
     </form>
   );
 }

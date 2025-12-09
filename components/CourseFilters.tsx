@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,6 +15,13 @@ import {
 } from "@/components/ui/accordion";
 import { Search } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { getCategories } from "@/app/courses/actions";
+
+interface Category {
+  id: number;
+  title: string;
+  slug: string;
+}
 
 export default function CourseFilters() {
   const router = useRouter();
@@ -30,6 +37,15 @@ export default function CourseFilters() {
   const [selectedLevel, setSelectedLevel] = useState(
     searchParams.get("level") || "all"
   );
+  const [categoryOptions, setCategoryOptions] = useState<Category[]>([]);
+
+  useEffect(() => {
+    async function fetchCategories() {
+      const categories = await getCategories();
+      setCategoryOptions(categories);
+    }
+    fetchCategories();
+  }, []);
 
   // Toggle checkbox selection
   const toggleCategory = (value: string) => {
@@ -62,14 +78,6 @@ export default function CourseFilters() {
     setSelectedLevel("all");
     router.push("/courses");
   };
-
-  const categoryOptions = [
-    "Web Development",
-    "AI/ML",
-    "Data Science",
-    "Design",
-    "DevOps",
-  ];
 
   const levelOptions = [
     { id: "all", label: "All Levels" },
@@ -105,17 +113,17 @@ export default function CourseFilters() {
               <AccordionContent>
                 <div className="flex flex-col gap-3 pt-2">
                   {categoryOptions.map((category) => (
-                    <div key={category} className="flex items-center space-x-3">
+                    <div key={category.id} className="flex items-center space-x-3">
                       <Checkbox
-                        id={category}
-                        checked={selectedCategories.includes(category)}
-                        onCheckedChange={() => toggleCategory(category)}
+                        id={String(category.id)}
+                        checked={selectedCategories.includes(category.title)}
+                        onCheckedChange={() => toggleCategory(category.title)}
                       />
                       <label
-                        htmlFor={category}
+                        htmlFor={String(category.id)}
                         className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                       >
-                        {category}
+                        {category.title}
                       </label>
                     </div>
                   ))}

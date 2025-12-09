@@ -11,7 +11,6 @@ import {
   CheckCircle,
   PlayCircle,
   Play,
-  Download, // This import is not used.
   ExternalLink,
 } from "lucide-react";
 import { MarkAsCompleteButton } from "./MarkAsCompleteButton"; // Corrected import path
@@ -39,10 +38,9 @@ export default async function CourseDetailPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { slug } = await params;
-  console.log("params:", await params);
-  console.log("search:", await searchParams);
+  const search = await searchParams;
   const id = slug && slug[0];
-  const lessonId = searchParams;
+  const lessonId = search.lesson;
 
   // Fetch course with category and instructor info
   const course = await db
@@ -118,7 +116,6 @@ export default async function CourseDetailPage({
       return { ...module, lessons };
     })
   );
-  console.log(modulesWithLessons);
 
   // Placeholder for user
   const userId = 1;
@@ -151,11 +148,11 @@ export default async function CourseDetailPage({
   const progressPercentage =
     totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
 
-  const currentLesson = lessonId
-    ? modulesWithLessons
-        .flatMap((m) => m.lessons)
-        .find((l) => l.id === Number(lessonId))
-    : modulesWithLessons[0]?.lessons[0];
+  const currentLesson =
+    modulesWithLessons
+      .flatMap((m) => m.lessons)
+      .find((l) => l.id === Number(lessonId)) ||
+    modulesWithLessons[0]?.lessons[0];
 
   return (
     <div className="container mx-auto p-4 sm:p-6 lg:p-8">

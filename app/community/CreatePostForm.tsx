@@ -34,6 +34,10 @@ export function CreatePostForm() {
         <form action={formAction} className="flex flex-col gap-4">
           <Input name="title" placeholder="Title" required />
           <Textarea name="content" placeholder="Content" required />
+          <div className="space-y-2">
+            <label htmlFor="media">Image/Video (Optional)</label>
+            <Input name="media" type="file" accept="image/*,video/*" />
+          </div>
           <SubmitButton />
           {state?.message && (
             <p className={state.success ? "text-green-500" : "text-red-500"}>
