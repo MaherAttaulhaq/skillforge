@@ -46,7 +46,6 @@ interface CreateCourseFormProps {
 
 export function CreateCourseForm({ categories }: CreateCourseFormProps) {
   const [state, formAction] = useActionState(createCourse, initialState);
-  console.log(categories);
   
   const [modules, setModules] = useState<Module[]>([
     {

@@ -7,12 +7,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import {
-  CheckCircle,
-  PlayCircle,
-  Play,
-  ExternalLink,
-} from "lucide-react";
+import { CheckCircle, PlayCircle, Play, ExternalLink } from "lucide-react";
 import { MarkAsCompleteButton } from "./MarkAsCompleteButton"; // Corrected import path
 import Link from "next/link";
 import {
