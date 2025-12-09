@@ -78,13 +78,13 @@ function parseModulesFromFormData(formData: FormData) {
   }
 
   for (const key in tempModules) {
-    const module = tempModules[key];
+    const currentModule = tempModules[key];
     const lessons = [];
-    for (const lessonKey in module.lessons) {
-      lessons.push(module.lessons[lessonKey]);
+    for (const lessonKey in currentModule.lessons) {
+      lessons.push(currentModule.lessons[lessonKey]);
     }
-    module.lessons = lessons;
-    modules.push(module);
+    currentModule.lessons = lessons;
+    modules.push(currentModule);
   }
 
   return modules;
@@ -166,7 +166,6 @@ export async function createCourse(
         .insert(modules)
         .values({
           title: module.title,
-          description: module.description,
           courseId: newCourse.id,
           position: moduleIndex,
         })

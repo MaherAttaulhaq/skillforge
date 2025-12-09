@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, X, Upload, Save, Eye, Sparkles } from "lucide-react";
+import { PlusCircle, X, Upload, Save, Eye } from "lucide-react";
 import { createCourse } from "./actions";
 
 interface Lesson {
@@ -46,6 +46,8 @@ interface CreateCourseFormProps {
 
 export function CreateCourseForm({ categories }: CreateCourseFormProps) {
   const [state, formAction] = useActionState(createCourse, initialState);
+  console.log(categories);
+  
   const [modules, setModules] = useState<Module[]>([
     {
       id: "1",

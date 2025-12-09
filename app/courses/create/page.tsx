@@ -1,6 +1,5 @@
 import { CreateCourseForm } from "./CreateCourseForm";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BrainCircuit, Bell, Sparkles } from "lucide-react";
+import { BrainCircuit, Bell } from "lucide-react";
 import Link from "next/link";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
