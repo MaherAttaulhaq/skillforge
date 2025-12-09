@@ -44,6 +44,7 @@ interface CreateCourseFormProps {
 }
 
 export function CreateCourseForm({ categories }: CreateCourseFormProps) {
+  // @ts-ignore
   const [state, formAction] = useActionState(createCourse, initialState);
   const [modules, setModules] = useState<Module[]>([
     {
@@ -71,34 +72,37 @@ export function CreateCourseForm({ categories }: CreateCourseFormProps) {
       setModules(modules.filter((module) => module.id !== id));
     }
   };
-  
+
   const addLesson = (moduleId: string) => {
-    const newModules = modules.map(m => {
-        if (m.id === moduleId) {
-            return {
-                ...m,
-                lessons: [...m.lessons, {id: Date.now().toString(), title: "", content: ""}]
-            }
-        }
-        return m;
+    const newModules = modules.map((m) => {
+      if (m.id === moduleId) {
+        return {
+          ...m,
+          lessons: [
+            ...m.lessons,
+            { id: Date.now().toString(), title: "", content: "" },
+          ],
+        };
+      }
+      return m;
     });
     setModules(newModules);
   };
-  
+
   const removeLesson = (moduleId: string, lessonId: string) => {
-    const newModules = modules.map(m => {
-        if (m.id === moduleId) {
-            if (m.lessons.length > 1) {
-                return {
-                    ...m,
-                    lessons: m.lessons.filter(l => l.id !== lessonId)
-                }
-            }
+    const newModules = modules.map((m) => {
+      if (m.id === moduleId) {
+        if (m.lessons.length > 1) {
+          return {
+            ...m,
+            lessons: m.lessons.filter((l) => l.id !== lessonId),
+          };
         }
-        return m;
+      }
+      return m;
     });
     setModules(newModules);
-  }
+  };
 
   return (
     <form action={formAction}>
@@ -111,47 +115,56 @@ export function CreateCourseForm({ categories }: CreateCourseFormProps) {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="course-title">Course Title</Label>
-                                <Input
-                                  id="course-title"
-                                  name="title"
-                                  placeholder="e.g., Introduction to Web Design"
-                                />
-                                {state.errors?.title && <div className="text-red-500 text-sm">{state.errors.title}</div>}
-                              </div>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                  <Label htmlFor="course-category">Category</Label>
-                                  <Select name="category">
-                                    <SelectTrigger id="course-category">
-                                      <SelectValue placeholder="Select category" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {categories.map((category) => (
-                                        <SelectItem key={category.id} value={String(category.id)}>
-                                          {category.title}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                <div className="space-y-2">
-                                  <Label htmlFor="difficulty-level">Difficulty Level</Label>
-                                  <Select name="level">
-                                    <SelectTrigger id="difficulty-level">
-                                      <SelectValue placeholder="Select level" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="beginner">Beginner</SelectItem>
-                                      <SelectItem value="intermediate">Intermediate</SelectItem>
-                                      <SelectItem value="advanced">Advanced</SelectItem>
-                                      <SelectItem value="all">All Levels</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              </div>
-                               {state.message && <div className="text-red-500 text-sm">{state.message}</div>}
-                            </CardContent>
-                          </Card>
+                <Input
+                  id="course-title"
+                  name="title"
+                  placeholder="e.g., Introduction to Web Design"
+                />
+                {state.errors?.title && (
+                  <div className="text-red-500 text-sm">
+                    {state.errors.title}
+                  </div>
+                )}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="course-category">Category</Label>
+                  <Select name="category">
+                    <SelectTrigger id="course-category">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((category) => (
+                        <SelectItem
+                          key={category.id}
+                          value={String(category.id)}
+                        >
+                          {category.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="difficulty-level">Difficulty Level</Label>
+                  <Select name="level">
+                    <SelectTrigger id="difficulty-level">
+                      <SelectValue placeholder="Select level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="beginner">Beginner</SelectItem>
+                      <SelectItem value="intermediate">Intermediate</SelectItem>
+                      <SelectItem value="advanced">Advanced</SelectItem>
+                      <SelectItem value="all">All Levels</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              {state.message && (
+                <div className="text-red-500 text-sm">{state.message}</div>
+              )}
+            </CardContent>
+          </Card>
           <Card>
             <CardHeader>
               <CardTitle>Course Description</CardTitle>
@@ -212,49 +225,57 @@ export function CreateCourseForm({ categories }: CreateCourseFormProps) {
                     rows={2}
                     value={module.description}
                     onChange={(e) => {
-                        const newModules = [...modules];
-                        newModules[moduleIndex].description = e.target.value;
-                        setModules(newModules);
+                      const newModules = [...modules];
+                      newModules[moduleIndex].description = e.target.value;
+                      setModules(newModules);
                     }}
                   />
                   <div className="pl-4 border-l-2 border-primary/20 space-y-4">
-                      {module.lessons.map((lesson, lessonIndex) => (
-                           <div key={lesson.id} className="space-y-2">
-                               <div className="flex items-center gap-2">
-                                    <Input 
-                                        placeholder={`Lesson ${lessonIndex + 1}: Title`}
-                                        value={lesson.title}
-                                        onChange={(e) => {
-                                            const newModules = [...modules];
-                                            newModules[moduleIndex].lessons[lessonIndex].title = e.target.value;
-                                            setModules(newModules);
-                                        }}
-                                    />
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() => removeLesson(module.id, lesson.id)}
-                                        disabled={module.lessons.length <= 1}
-                                    >
-                                        <X className="h-4 w-4" />
-                                    </Button>
-                               </div>
-                               <Textarea 
-                                    placeholder="Lesson content..."
-                                    rows={3}
-                                    value={lesson.content}
-                                    onChange={(e) => {
-                                        const newModules = [...modules];
-                                        newModules[moduleIndex].lessons[lessonIndex].content = e.target.value;
-                                        setModules(newModules);
-                                    }}
-                               />
-                           </div>
-                      ))}
-                      <Button variant="outline" size="sm" onClick={() => addLesson(module.id)}>
-                          <PlusCircle className="h-4 w-4 mr-2" />
-                          Add Lesson
-                      </Button>
+                    {module.lessons.map((lesson, lessonIndex) => (
+                      <div key={lesson.id} className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            placeholder={`Lesson ${lessonIndex + 1}: Title`}
+                            value={lesson.title}
+                            onChange={(e) => {
+                              const newModules = [...modules];
+                              newModules[moduleIndex].lessons[
+                                lessonIndex
+                              ].title = e.target.value;
+                              setModules(newModules);
+                            }}
+                          />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeLesson(module.id, lesson.id)}
+                            disabled={module.lessons.length <= 1}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <Textarea
+                          placeholder="Lesson content..."
+                          rows={3}
+                          value={lesson.content}
+                          onChange={(e) => {
+                            const newModules = [...modules];
+                            newModules[moduleIndex].lessons[
+                              lessonIndex
+                            ].content = e.target.value;
+                            setModules(newModules);
+                          }}
+                        />
+                      </div>
+                    ))}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addLesson(module.id)}
+                    >
+                      <PlusCircle className="h-4 w-4 mr-2" />
+                      Add Lesson
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -273,21 +294,30 @@ export function CreateCourseForm({ categories }: CreateCourseFormProps) {
                   <Upload className="h-5 w-5 mr-2" />
                   Publish Course
                 </Button>
-                <Button type="button" className="w-full" variant="outline" size="lg">
+                <Button
+                  type="button"
+                  className="w-full"
+                  variant="outline"
+                  size="lg"
+                >
                   <Save className="h-5 w-5 mr-2" />
                   Save Draft
                 </Button>
-                <Button type="button" className="w-full" variant="ghost" size="lg">
+                <Button
+                  type="button"
+                  className="w-full"
+                  variant="ghost"
+                  size="lg"
+                >
                   <Eye className="h-5 w-5 mr-2" />
                   Preview
                 </Button>
               </CardContent>
             </Card>
-            
+
             <p aria-live="polite" className="sr-only" role="status">
               {state?.message}
             </p>
-
           </div>
         </div>
       </div>

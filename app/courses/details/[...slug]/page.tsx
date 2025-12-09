@@ -11,9 +11,10 @@ import {
   CheckCircle,
   PlayCircle,
   Play,
-  Download,
+  Download, // This import is not used.
   ExternalLink,
 } from "lucide-react";
+import { MarkAsCompleteButton } from "./MarkAsCompleteButton"; // Corrected import path
 import Link from "next/link";
 import {
   courses as coursesTable,
@@ -21,9 +22,10 @@ import {
   lessons as lessonsTable,
   categories as categoriesTable,
   users as usersTable,
+  lessonProgress,
 } from "@/db/schema";
 import { db } from "@/db";
-import { eq, and, ne } from "drizzle-orm";
+import { eq, and, ne, inArray } from "drizzle-orm";
 
 interface params {
   slug?: string[];
@@ -31,11 +33,16 @@ interface params {
 
 export default async function CourseDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<params>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { slug } = await params;
+  console.log("params:", await params);
+  console.log("search:", await searchParams);
   const id = slug && slug[0];
+  const lessonId = searchParams;
 
   // Fetch course with category and instructor info
   const course = await db
@@ -113,17 +120,42 @@ export default async function CourseDetailPage({
   );
   console.log(modulesWithLessons);
 
-  // Calculate progress (for demo, set to 0)
-  const totalLessons = modulesWithLessons.reduce(
-    (acc, mod) => acc + mod.lessons.length,
-    0
+  // Placeholder for user
+  const userId = 1;
+
+  // Fetch user progress
+  const allLessonsIds = modulesWithLessons.flatMap((m) =>
+    m.lessons.map((l) => l.id)
   );
-  const completedLessons = 0; // Would come from lesson_progress table
+
+  let userProgress: { isCompleted: boolean | null; lessonId: number }[] = [];
+
+  if (allLessonsIds.length > 0) {
+    userProgress = await db
+      .select({
+        lessonId: lessonProgress.lessonId,
+        isCompleted: lessonProgress.isCompleted,
+      })
+      .from(lessonProgress)
+      .where(
+        and(
+          eq(lessonProgress.userId, userId),
+          inArray(lessonProgress.lessonId, allLessonsIds)
+        )
+      );
+  }
+
+  // Calculate progress
+  const totalLessons = allLessonsIds.length;
+  const completedLessons = userProgress.filter((p) => p.isCompleted).length;
   const progressPercentage =
     totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
 
-  // Get first lesson as current
-  const currentLesson = modulesWithLessons[0]?.lessons[0];
+  const currentLesson = lessonId
+    ? modulesWithLessons
+        .flatMap((m) => m.lessons)
+        .find((l) => l.id === Number(lessonId))
+    : modulesWithLessons[0]?.lessons[0];
 
   return (
     <div className="container mx-auto p-4 sm:p-6 lg:p-8">
@@ -151,48 +183,51 @@ export default async function CourseDetailPage({
                     "Master concepts and build modern applications."}
                 </p>
               </div>
-              <Button className="gap-2 shadow-sm">
-                <CheckCircle className="h-4 w-4" />
-                Mark as Complete
-              </Button>
+              {currentLesson && (
+                <MarkAsCompleteButton
+                  lessonId={currentLesson.id}
+                  isCompleted={
+                    !!userProgress.find((p) => p.lessonId === currentLesson.id)
+                      ?.isCompleted
+                  }
+                  courseId={course.id}
+                  courseSlug={course.slug}
+                />
+              )}
             </div>
-            <div>
-              <div className="relative flex items-center justify-center bg-black aspect-video rounded-xl overflow-hidden shadow-lg group">
-                {course.thumbnail ? (
-                  <div
-                    className="absolute inset-0 bg-cover bg-center opacity-60 group-hover:opacity-40 transition-opacity"
-                    style={{
-                      backgroundImage: `url("${course.thumbnail}")`,
-                    }}
-                  ></div>
-                ) : (
-                  <div className="absolute inset-0 bg-linear-to-br from-primary/20 to-accent/20"></div>
-                )}
-                <Button
-                  size="icon"
-                  className="h-16 w-16 rounded-full bg-primary/90 text-white hover:bg-primary z-10"
-                >
-                  <Play className="h-8 w-8 ml-1" />
-                </Button>
-                <div className="absolute inset-x-0 bottom-0 px-4 py-3 bg-linear-to-t from-black/80 to-transparent">
-                  <div className="relative flex h-4 items-center justify-center group/progress">
-                    <div className="h-1.5 w-full rounded-full bg-white/30">
-                      <div
-                        className="h-1.5 rounded-full bg-accent"
-                        style={{ width: "25%" }}
-                      ></div>
-                    </div>
-                    <div
-                      className="absolute h-3 w-3 rounded-full bg-white shadow transition-transform group-hover/progress:scale-110"
-                      style={{ left: "25%" }}
-                    ></div>
-                  </div>
-                  <div className="flex items-center justify-between mt-1 text-white text-xs font-medium">
-                    <span>2:37</span>
-                    <span>10:14</span>
-                  </div>
+            <div className="rounded-xl overflow-hidden shadow-lg">
+              {currentLesson?.videoUrl ? (
+                <div className="relative aspect-video">
+                  <iframe
+                    src={currentLesson.videoUrl}
+                    title={currentLesson.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="absolute inset-0 w-full h-full"
+                  ></iframe>
                 </div>
-              </div>
+              ) : currentLesson?.content ? (
+                <div className="p-6 bg-muted/20">
+                  <h2 className="text-2xl font-bold mb-4">Lesson Content</h2>
+                  <pre className="bg-white p-4 rounded-md whitespace-pre-wrap font-sans">
+                    {currentLesson.content}
+                  </pre>
+                </div>
+              ) : (
+                <div className="relative flex items-center justify-center bg-black aspect-video">
+                  {course.thumbnail ? (
+                    <div
+                      className="absolute inset-0 bg-cover bg-center opacity-60"
+                      style={{
+                        backgroundImage: `url("${course.thumbnail}")`,
+                      }}
+                    ></div>
+                  ) : (
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20"></div>
+                  )}
+                  <PlayCircle className="h-16 w-16 text-white z-10" />
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -225,22 +260,37 @@ export default async function CourseDetailPage({
                     </AccordionTrigger>
                     <AccordionContent>
                       <ul className="flex flex-col gap-2 mt-2">
-                        {module.lessons.map((lesson) => (
-                          <li
-                            key={lesson.id}
-                            className={`flex items-center justify-between p-3 rounded-md transition-colors ${
-                              currentLesson?.id === lesson.id
-                                ? "bg-primary/10 text-primary"
-                                : "hover:bg-muted/50"
-                            }`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <PlayCircle className="h-5 w-5" />
-                              <span>{lesson.title}</span>
-                            </div>
-                            <CheckCircle className="h-5 w-5 text-green-500" />
-                          </li>
-                        ))}
+                        {module.lessons.map((lesson) => {
+                          const isCompleted = !!userProgress.find(
+                            (p) => p.lessonId === lesson.id
+                          )?.isCompleted;
+
+                          return (
+                            <li
+                              key={lesson.id}
+                              className={`flex items-center justify-between p-3 rounded-md transition-colors ${
+                                currentLesson?.id === lesson.id
+                                  ? "bg-primary/10 text-primary"
+                                  : "hover:bg-muted/50"
+                              }`}
+                            >
+                              <Link
+                                href={`/courses/details/${course.id}/${course.slug}?lesson=${lesson.id}`}
+                                className="flex items-center gap-3"
+                              >
+                                <PlayCircle className="h-5 w-5" />
+                                <span>{lesson.title}</span>
+                              </Link>
+                              <CheckCircle
+                                className={`h-5 w-5 ${
+                                  isCompleted
+                                    ? "text-green-500"
+                                    : "text-muted-foreground"
+                                }`}
+                              />
+                            </li>
+                          );
+                        })}
                       </ul>
                     </AccordionContent>
                   </AccordionItem>
