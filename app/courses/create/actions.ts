@@ -44,65 +44,94 @@ const courseSchema = z.object({
 });
 
 function parseModulesFromFormData(formData: FormData) {
-  const modules: any[] = [];
-  const moduleRegex = /modules\[(\d+)\]\[(\w+)\]/;
-  const lessonRegex = /modules\[(\d+)\]\[lessons\]\[(\d+)\]\[(\w+)\]/;
+  console.log("formdata is in action", formData);
 
-  const tempModules: { [key: string]: any } = {};
+  const modulesMap = new Map<number, any>();
 
   for (const [key, value] of formData.entries()) {
-    let match = key.match(moduleRegex);
+    // Match module fields: modules[<moduleIndex>][<field>]
+    let match = key.match(/^modules\[(\d+)\]\[(\w+)\]$/);
     if (match) {
-      const index = match[1];
+      const moduleIndex = parseInt(match[1]);
       const field = match[2];
-      if (!tempModules[index]) {
-        tempModules[index] = { lessons: {} };
-      }
-      tempModules[index][field] = value;
-    } else {
-      match = key.match(lessonRegex);
-      if (match) {
-        const moduleIndex = match[1];
-        const lessonIndex = match[2];
-        const field = match[3];
 
-        if (!tempModules[moduleIndex]) {
-          tempModules[moduleIndex] = { lessons: {} };
-        }
-        if (!tempModules[moduleIndex].lessons[lessonIndex]) {
-          tempModules[moduleIndex].lessons[lessonIndex] = {};
-        }
-        tempModules[moduleIndex].lessons[lessonIndex][field] = value;
+      if (!modulesMap.has(moduleIndex)) {
+        modulesMap.set(moduleIndex, { lessons: {} });
       }
+      const module = modulesMap.get(moduleIndex);
+      module[field] = value;
+      continue;
+    }
+
+    // Match lesson fields: modules[<moduleIndex>][lessons][<lessonIndex>][<field>]
+    match = key.match(/^modules\[(\d+)\]\[lessons\]\[(\d+)\]\[(\w+)\]$/);
+    if (match) {
+      const moduleIndex = parseInt(match[1]);
+      const lessonIndex = parseInt(match[2]);
+      const field = match[3];
+
+      if (!modulesMap.has(moduleIndex)) {
+        modulesMap.set(moduleIndex, { lessons: {} });
+      }
+      const module = modulesMap.get(moduleIndex);
+
+      if (!module.lessons[lessonIndex]) {
+        module.lessons[lessonIndex] = {};
+      }
+      module.lessons[lessonIndex][field] = value;
+      continue;
     }
   }
 
-  for (const key in tempModules) {
-    const currentModule = tempModules[key];
-    const lessons = [];
-    for (const lessonKey in currentModule.lessons) {
-      lessons.push(currentModule.lessons[lessonKey]);
-    }
-    currentModule.lessons = lessons;
-    modules.push(currentModule);
-  }
+  const modules: any[] = Array.from(modulesMap.entries())
+    .sort(([aIndex], [bIndex]) => aIndex - bIndex)
+    .map(([, module]) => {
+      const lessons = Array.from(Object.entries(module.lessons))
+        .sort(([aIndex], [bIndex]) => parseInt(aIndex) - parseInt(bIndex))
+        .map(([, lesson]) => lesson);
+      return { ...module, lessons };
+    });
+
+  console.log("[parseModulesFromFormData] Final modules array before return:", JSON.stringify(modules, (key, value) => {
+    if (value instanceof File) return { name: value.name, size: value.size, type: value.type };
+    return value;
+  }, 2));
 
   return modules;
 }
 
 async function saveFile(file: File) {
-  const uploadsDir = path.join(process.cwd(), "public", "uploads");
-  await fs.mkdir(uploadsDir, { recursive: true });
+  try {
+    console.log(`[saveFile] Attempting to save file: ${file.name}`);
+    const uploadsDir = path.join(process.cwd(), "public", "uploads");
+    console.log(`[saveFile] Target directory: ${uploadsDir}`);
 
-  const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-  const fileExtension = path.extname(file.name);
-  const newFilename = `${uniqueSuffix}${fileExtension}`;
-  const filePath = path.join(uploadsDir, newFilename);
+    await fs.mkdir(uploadsDir, { recursive: true });
+    console.log(`[saveFile] Directory ensured: ${uploadsDir}`);
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-  await fs.writeFile(filePath, buffer);
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    const fileExtension = path.extname(file.name);
+    const newFilename = `${uniqueSuffix}${fileExtension}`;
+    const filePath = path.join(uploadsDir, newFilename);
+    console.log(`[saveFile] New filename: ${newFilename}, Full path: ${filePath}`);
 
-  return `/uploads/${newFilename}`;
+    if (file.size === 0) {
+      console.warn(`[saveFile] File ${file.name} has zero size. Skipping write.`);
+      return null; // Or handle as an error, depending on desired behavior
+    }
+
+    console.log(`[saveFile] Reading file buffer for ${file.name}, size: ${file.size}`);
+    const buffer = Buffer.from(await file.arrayBuffer());
+    console.log(`[saveFile] Buffer created, length: ${buffer.length}`);
+
+    await fs.writeFile(filePath, buffer);
+    console.log(`[saveFile] File written successfully to ${filePath}`);
+
+    return `/uploads/${newFilename}`;
+  } catch (error) {
+    console.error(`[saveFile] Error saving file ${file.name}:`, error);
+    throw error; // Re-throw to be caught by the caller
+  }
 }
 
 export async function createCourse(

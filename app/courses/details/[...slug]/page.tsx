@@ -190,13 +190,14 @@ export default async function CourseDetailPage({
             <div className="rounded-xl overflow-hidden shadow-lg">
               {currentLesson?.videoUrl ? (
                 <div className="relative aspect-video">
-                  <iframe
+                  <video
                     src={currentLesson.videoUrl}
                     title={currentLesson.title}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
+                    controls
                     className="absolute inset-0 w-full h-full"
-                  ></iframe>
+                  >
+                    Your browser does not support the video tag.
+                  </video>
                 </div>
               ) : currentLesson?.content ? (
                 <div className="p-6 bg-muted/20">
