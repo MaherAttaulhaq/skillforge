@@ -5,23 +5,18 @@ import { lessonProgress } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
-// Placeholder for user authentication
-const getUserId = async () => {
-  // In a real app, you'd get this from your auth system
-  return 1;
-};
-
 export async function toggleLessonCompletion(
   lessonId: number,
   isCompleted: boolean,
   courseId: number,
   courseSlug: string,
+  user: any
 ) {
-  const userId = await getUserId();
-
-  if (!userId) {
+  if (!user) {
     return { error: "User not authenticated" };
   }
+
+  const userId = user.id;
 
   try {
     await db

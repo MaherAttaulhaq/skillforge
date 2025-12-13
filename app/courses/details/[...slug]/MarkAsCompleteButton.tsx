@@ -10,6 +10,7 @@ interface MarkAsCompleteButtonProps {
   isCompleted: boolean;
   courseId: number;
   courseSlug: string;
+  user: any;
 }
 
 export function MarkAsCompleteButton({
@@ -17,12 +18,20 @@ export function MarkAsCompleteButton({
   isCompleted,
   courseId,
   courseSlug,
+  user,
 }: MarkAsCompleteButtonProps) {
   const [isPending, startTransition] = useTransition();
 
   const handleClick = () => {
+    if (!user) return;
     startTransition(async () => {
-      await toggleLessonCompletion(lessonId, isCompleted, courseId, courseSlug);
+      await toggleLessonCompletion(
+        lessonId,
+        isCompleted,
+        courseId,
+        courseSlug,
+        user
+      );
     });
   };
 

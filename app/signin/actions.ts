@@ -6,6 +6,8 @@ import { users } from "@/db/schema";
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm"; // Import eq for equality comparison
+import { encrypt } from "@/lib/auth";
+import { cookies } from "next/headers";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -47,8 +49,12 @@ export async function loginUser(
     }
 
     // --- Authentication Successful ---
-    // In a real application, you would set up a session here.
-    // For example, using an authentication library like NextAuth.js or custom session management.
+    // Add SESSION_SECRET to your .env file
+    const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    const session = await encrypt({ user, expires });
+
+    cookies().set("session", session, { expires, httpOnly: true });
+
     console.log("User logged in successfully:", user.email);
 
     redirect("/dashboard"); // Redirect to the dashboard or a protected route
