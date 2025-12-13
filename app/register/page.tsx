@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useFormState, useFormStatus } from "react-dom";
 import { registerUser } from "./actions";
+import { useActionState } from "react";
 
 const initialState = {
   message: "",
@@ -31,7 +32,7 @@ function SubmitButton() {
 }
 
 export default function Page() {
-  const [state, formAction] = useFormState(registerUser, initialState);
+  const [state, formAction] = useActionState(registerUser, initialState);
 
   return (
     <Card className="w-full max-w-sm mx-auto my-10">
