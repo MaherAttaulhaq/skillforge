@@ -25,6 +25,16 @@ CREATE TABLE `certificates` (
 	FOREIGN KEY (`course_id`) REFERENCES `courses`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
+CREATE TABLE `comments` (
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`content` text NOT NULL,
+	`post_id` integer NOT NULL,
+	`author_id` integer NOT NULL,
+	`created_at` text DEFAULT CURRENT_TIMESTAMP,
+	FOREIGN KEY (`post_id`) REFERENCES `posts`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`author_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
 CREATE TABLE `courses` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`title` text NOT NULL,
@@ -48,6 +58,29 @@ CREATE TABLE `enrollments` (
 	PRIMARY KEY(`user_id`, `course_id`),
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`course_id`) REFERENCES `courses`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
+CREATE TABLE `jobs` (
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`title` text NOT NULL,
+	`company` text NOT NULL,
+	`location` text NOT NULL,
+	`match` integer,
+	`logo` text NOT NULL,
+	`tags` text NOT NULL,
+	`posted` text NOT NULL,
+	`description` text,
+	`requirements` text,
+	`benefits` text,
+	`apply` text,
+	`salary` text,
+	`type` text,
+	`work_mode` text,
+	`experience` text,
+	`created_at` text DEFAULT CURRENT_TIMESTAMP,
+	`updated_at` text DEFAULT CURRENT_TIMESTAMP,
+	`deleted_at` text,
+	`is_deleted` integer DEFAULT false
 );
 --> statement-breakpoint
 CREATE TABLE `lesson_progress` (
@@ -86,6 +119,16 @@ CREATE TABLE `notifications` (
 	`is_read` integer DEFAULT false,
 	`created_at` text DEFAULT CURRENT_TIMESTAMP,
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
+CREATE TABLE `posts` (
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`title` text NOT NULL,
+	`content` text,
+	`author_id` integer NOT NULL,
+	`media_url` text,
+	`created_at` text DEFAULT CURRENT_TIMESTAMP,
+	FOREIGN KEY (`author_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
 CREATE TABLE `reviews` (
