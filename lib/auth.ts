@@ -1,4 +1,4 @@
-import "dotenv/config";
+// import "dotenv/config";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";

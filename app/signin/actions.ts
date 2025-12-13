@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { db } from "@/db";
+import { db } from "@/db/db";
 import { users } from "@/db/schema";
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";

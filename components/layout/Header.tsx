@@ -1,26 +1,10 @@
-"use client";
 
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { BrainCircuit } from "lucide-react";
-import { LogoutButton } from "./LogoutButton";
-import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button"
+import { BrainCircuit } from "lucide-react"
+import React from "react"
+import Link from "next/link"
 
-export function Header() {
-  const [session, setSession] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchSession = async () => {
-      const res = await fetch("/api/auth/session");
-      const data = await res.json();
-      setSession(data.session);
-      setLoading(false);
-    };
-
-    fetchSession();
-  }, []);
-
+export default function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 dark:border-slate-800/80 bg-background/80 backdrop-blur-sm">
       <div className="container mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
@@ -48,30 +32,13 @@ export function Header() {
             Testimonials
           </Link>
         </div>
-        <div className="flex items-center gap-2">
-          {loading ? null : session ? (
-            <>
-              <Link href="/dashboard">
-                <Button variant="outline" className="font-semibold shadow-sm">
-                  Dashboard
-                </Button>
-              </Link>
-              <LogoutButton />
-            </>
-          ) : (
-            <>
-              <Link href="/signin">
-                <Button variant="outline" className="font-semibold shadow-sm">
-                  Sign In
-                </Button>
-              </Link>
-              <Link href="/register">
-                <Button className="font-semibold shadow-sm">Sign Up</Button>
-              </Link>
-            </>
-          )}
-        </div>
+
+        <Link href="/register">
+          <Button className="font-semibold shadow-sm">
+            Sign Up
+          </Button>
+        </Link>
       </div>
-    </header>
-  );
+    </header >
+  )
 }

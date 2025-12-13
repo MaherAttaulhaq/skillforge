@@ -6,7 +6,6 @@ import { users } from "@/db/schema";
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { DrizzleSQLiteError } from "drizzle-orm/sqlite-core"; // Import DrizzleSQLiteError
 
 const registerSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
@@ -35,23 +34,24 @@ export async function registerUser(
 
   try {
     const passwordHash = await bcrypt.hash(password, 10); // Hash password
-    
+
     await db.insert(users).values({
       name: username,
       email,
       passwordHash,
       // Default role is 'student' as per schema, no need to set here
+      role: "student",
     });
 
     revalidatePath("/"); // Revalidate any cached data that might show user counts or similar
     redirect("/Signin"); // Redirect to sign-in page after successful registration
-    
   } catch (e: any) {
     console.error("Registration error:", e);
     // Check for unique constraint violation (e.g., duplicate email)
     if (e.message && e.message.includes("UNIQUE constraint failed")) {
       return {
-        message: "Registration failed: An account with this email already exists.",
+        message:
+          "Registration failed: An account with this email already exists.",
       };
     }
     return {
