@@ -9,7 +9,62 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Signal, BookOpen, Search } from "lucide-react";
 import Link from "next/link";
 import CourseFilters from "@/components/CourseFilters";
+import { Metadata } from "next";
 
+export const metadata: Metadata = {
+  title: "SkillForge - Courses",
+  description: "Unlock Your Career Potential with AI",
+  keywords: [
+    "SkillForge",
+    "Courses",
+    "AI",
+    "Resume",
+    "Cover Letter",
+    "LinkedIn",
+    "Career",
+    "Job Search",
+    "Interview Preparation",
+    "Skill Development",
+    "Career Advice",
+  ],
+  openGraph: {
+    title: "SkillForge - Courses",
+    description: "Unlock Your Career Potential with AI",
+    siteName: "SkillForge",
+    type: "website",
+    locale: "en_US",
+    url: "https://skillforge.ai",
+    images: [
+      {
+        url: "images/images.png",
+        alt: "SkillForge - Courses",
+        width: 800,
+        height: 600,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SkillForge - Courses",
+    description: "Unlock Your Career Potential with AI",
+    images: ["images/images.png"],
+    creator: "@skillforgeai",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    nocache: true,
+    googleBot: {
+      index: true,
+      follow: false,
+      // noimages: true,
+      noarchive: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  }
+};
 interface SearchParams {
   search?: string;
   categories?: string;
@@ -65,40 +120,40 @@ export default async function CoursesPage({
   const courses =
     conditions.length > 0
       ? await db
-          .select({
-            id: coursesTable.id,
-            title: coursesTable.title,
-            slug: coursesTable.slug,
-            description: coursesTable.description,
-            thumbnail: coursesTable.thumbnail,
-            level: coursesTable.level,
-            price: coursesTable.price,
-            categoryId: coursesTable.categoryId,
-            category: categoriesTable.title,
-          })
-          .from(coursesTable)
-          .leftJoin(
-            categoriesTable,
-            eq(coursesTable.categoryId, categoriesTable.id)
-          )
-          .where(and(...conditions))
+        .select({
+          id: coursesTable.id,
+          title: coursesTable.title,
+          slug: coursesTable.slug,
+          description: coursesTable.description,
+          thumbnail: coursesTable.thumbnail,
+          level: coursesTable.level,
+          price: coursesTable.price,
+          categoryId: coursesTable.categoryId,
+          category: categoriesTable.title,
+        })
+        .from(coursesTable)
+        .leftJoin(
+          categoriesTable,
+          eq(coursesTable.categoryId, categoriesTable.id)
+        )
+        .where(and(...conditions))
       : await db
-          .select({
-            id: coursesTable.id,
-            title: coursesTable.title,
-            slug: coursesTable.slug,
-            description: coursesTable.description,
-            thumbnail: coursesTable.thumbnail,
-            level: coursesTable.level,
-            price: coursesTable.price,
-            categoryId: coursesTable.categoryId,
-            category: categoriesTable.title,
-          })
-          .from(coursesTable)
-          .leftJoin(
-            categoriesTable,
-            eq(coursesTable.categoryId, categoriesTable.id)
-          );
+        .select({
+          id: coursesTable.id,
+          title: coursesTable.title,
+          slug: coursesTable.slug,
+          description: coursesTable.description,
+          thumbnail: coursesTable.thumbnail,
+          level: coursesTable.level,
+          price: coursesTable.price,
+          categoryId: coursesTable.categoryId,
+          category: categoriesTable.title,
+        })
+        .from(coursesTable)
+        .leftJoin(
+          categoriesTable,
+          eq(coursesTable.categoryId, categoriesTable.id)
+        );
 
   const hasFilters = search || categories || level;
 

@@ -1,4 +1,4 @@
-CREATE TABLE `ai_content` (
+CREATE TABLE IF NOT EXISTS `ai_content` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` integer,
 	`type` text NOT NULL,
@@ -8,14 +8,14 @@ CREATE TABLE `ai_content` (
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
-CREATE TABLE `categories` (
+CREATE TABLE IF NOT EXISTS `categories` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`title` text NOT NULL,
 	`slug` text NOT NULL
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `categories_slug_unique` ON `categories` (`slug`);--> statement-breakpoint
-CREATE TABLE `certificates` (
+CREATE TABLE IF NOT EXISTS `certificates` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` integer NOT NULL,
 	`course_id` integer NOT NULL,
@@ -25,7 +25,7 @@ CREATE TABLE `certificates` (
 	FOREIGN KEY (`course_id`) REFERENCES `courses`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
-CREATE TABLE `comments` (
+CREATE TABLE IF NOT EXISTS `comments` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`content` text NOT NULL,
 	`post_id` integer NOT NULL,
@@ -35,7 +35,7 @@ CREATE TABLE `comments` (
 	FOREIGN KEY (`author_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
-CREATE TABLE `courses` (
+CREATE TABLE IF NOT EXISTS `courses` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`title` text NOT NULL,
 	`slug` text NOT NULL,
@@ -51,7 +51,7 @@ CREATE TABLE `courses` (
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `courses_slug_unique` ON `courses` (`slug`);--> statement-breakpoint
-CREATE TABLE `enrollments` (
+CREATE TABLE IF NOT EXISTS `enrollments` (
 	`user_id` integer NOT NULL,
 	`course_id` integer NOT NULL,
 	`enrolled_at` text DEFAULT CURRENT_TIMESTAMP,
@@ -60,7 +60,7 @@ CREATE TABLE `enrollments` (
 	FOREIGN KEY (`course_id`) REFERENCES `courses`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
-CREATE TABLE `jobs` (
+CREATE TABLE IF NOT EXISTS `jobs` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`title` text NOT NULL,
 	`company` text NOT NULL,
@@ -83,7 +83,7 @@ CREATE TABLE `jobs` (
 	`is_deleted` integer DEFAULT false
 );
 --> statement-breakpoint
-CREATE TABLE `lesson_progress` (
+CREATE TABLE IF NOT EXISTS `lesson_progress` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` integer NOT NULL,
 	`lesson_id` integer NOT NULL,
@@ -93,7 +93,7 @@ CREATE TABLE `lesson_progress` (
 	FOREIGN KEY (`lesson_id`) REFERENCES `lessons`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
-CREATE TABLE `lessons` (
+CREATE TABLE IF NOT EXISTS `lessons` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`module_id` integer NOT NULL,
 	`title` text NOT NULL,
@@ -103,7 +103,7 @@ CREATE TABLE `lessons` (
 	FOREIGN KEY (`module_id`) REFERENCES `modules`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
-CREATE TABLE `modules` (
+CREATE TABLE IF NOT EXISTS `modules` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`course_id` integer NOT NULL,
 	`title` text NOT NULL,
@@ -111,7 +111,7 @@ CREATE TABLE `modules` (
 	FOREIGN KEY (`course_id`) REFERENCES `courses`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
-CREATE TABLE `notifications` (
+CREATE TABLE IF NOT EXISTS `notifications` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` integer NOT NULL,
 	`title` text NOT NULL,
@@ -121,7 +121,7 @@ CREATE TABLE `notifications` (
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
-CREATE TABLE `posts` (
+CREATE TABLE IF NOT EXISTS `posts` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`title` text NOT NULL,
 	`content` text,
@@ -131,7 +131,7 @@ CREATE TABLE `posts` (
 	FOREIGN KEY (`author_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
-CREATE TABLE `reviews` (
+CREATE TABLE IF NOT EXISTS `reviews` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`course_id` integer NOT NULL,
 	`user_id` integer NOT NULL,
@@ -142,7 +142,7 @@ CREATE TABLE `reviews` (
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
-CREATE TABLE `user_skills` (
+CREATE TABLE IF NOT EXISTS `user_skills` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` integer NOT NULL,
 	`skill` text NOT NULL,
@@ -150,7 +150,7 @@ CREATE TABLE `user_skills` (
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
-CREATE TABLE `users` (
+CREATE TABLE IF NOT EXISTS `users` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`name` text NOT NULL,
 	`email` text NOT NULL,
