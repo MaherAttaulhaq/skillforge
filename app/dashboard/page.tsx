@@ -26,9 +26,9 @@ export default async function DashboardPage() {
   // Fetch user skills
   const skills = currentUser
     ? await db
-        .select()
-        .from(userSkills)
-        .where(eq(userSkills.userId, currentUser.id))
+      .select()
+      .from(userSkills)
+      .where(eq(userSkills.userId, currentUser.id))
     : [];
 
   // Fetch recommended courses (top 3 by creation date)
@@ -57,9 +57,9 @@ export default async function DashboardPage() {
   const avgJobMatch =
     allJobs.length > 0
       ? Math.round(
-          allJobs.reduce((acc, job) => acc + (job.match || 0), 0) /
-            allJobs.length
-        )
+        allJobs.reduce((acc, job) => acc + (job.match || 0), 0) /
+        allJobs.length
+      )
       : 0;
 
   // Get top skill gap (skill with lowest level)
@@ -140,7 +140,7 @@ export default async function DashboardPage() {
               </h3>
               {recommendedCourses.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {recommendedCourses.map((course) => (
+                  {recommendedCourses.map((course: string) => (
                     <Card
                       key={course.id}
                       className="flex flex-col shadow-md hover:shadow-lg transition-all hover:-translate-y-1"
@@ -201,15 +201,14 @@ export default async function DashboardPage() {
                             skill.level === "expert"
                               ? 85
                               : skill.level === "intermediate"
-                              ? 60
-                              : 40;
+                                ? 60
+                                : 40;
                           return (
                             <>
                               <div
                                 key={`bar-${skill.id}`}
-                                className={`${
-                                  index % 2 === 0 ? "bg-primary" : "bg-accent"
-                                } rounded-t w-full transition-all duration-300 hover:opacity-80`}
+                                className={`${index % 2 === 0 ? "bg-primary" : "bg-accent"
+                                  } rounded-t w-full transition-all duration-300 hover:opacity-80`}
                                 style={{ height: `${height}%` }}
                               ></div>
                               <p

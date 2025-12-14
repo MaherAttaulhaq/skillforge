@@ -43,8 +43,8 @@ export async function registerUser(
       role: "student",
     });
 
-    revalidatePath("/"); // Revalidate any cached data that might show user counts or similar
-    redirect("/Signin"); // Redirect to sign-in page after successful registration
+    revalidatePath("/dashboard"); // Revalidate any cached data that might show user counts or similar
+    redirect("/signin"); // Redirect to sign-in page after successful registration
   } catch (e: any) {
     console.error("Registration error:", e);
     // Check for unique constraint violation (e.g., duplicate email)
