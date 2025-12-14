@@ -96,11 +96,10 @@ export default function Page() {
           {state.message && state.message.includes("success") && (
             <p className="text-green-500 text-sm mt-4">{state.message}</p>
           )}
-          <Link href="/dashboard" className="text-sm underline mb-4 block">
-            <div className="mt-6">
-              <SubmitButton />
-            </div>
-          </Link>
+
+          <div className="mt-6">
+            <SubmitButton />
+          </div>
         </form>
       </CardContent>
     </Card>

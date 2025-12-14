@@ -140,7 +140,7 @@ export default async function DashboardPage() {
               </h3>
               {recommendedCourses.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {recommendedCourses.map((course: string) => (
+                  {recommendedCourses.map((course: { id: number, slug: string, title: string, description: string | null, categoryTitle: string | null }) => (
                     <Card
                       key={course.id}
                       className="flex flex-col shadow-md hover:shadow-lg transition-all hover:-translate-y-1"
@@ -204,20 +204,18 @@ export default async function DashboardPage() {
                                 ? 60
                                 : 40;
                           return (
-                            <>
+                            <div key={skill.id} className="contents">
                               <div
-                                key={`bar-${skill.id}`}
                                 className={`${index % 2 === 0 ? "bg-primary" : "bg-accent"
                                   } rounded-t w-full transition-all duration-300 hover:opacity-80`}
                                 style={{ height: `${height}%` }}
                               ></div>
                               <p
-                                key={`label-${skill.id}`}
                                 className="text-xs font-bold text-muted-foreground truncate max-w-[60px]"
                               >
                                 {skill.skill}
                               </p>
-                            </>
+                            </div>
                           );
                         })}
                       </>

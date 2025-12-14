@@ -1,10 +1,16 @@
-
+import { db } from "@/db"; 
+import { getSession } from '@/lib/auth';
 import { Button } from "@/components/ui/button"
 import { BrainCircuit } from "lucide-react"
 import React from "react"
 import Link from "next/link"
 
-export default function Header() {
+export default async function Header() {
+  const session = await getSession();
+  if (!session) throw new Error("Unauthorized");
+  const user = await db.user.findUnique({
+    where: { id: session.userId }
+  });
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 dark:border-slate-800/80 bg-background/80 backdrop-blur-sm">
       <div className="container mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
@@ -35,7 +41,7 @@ export default function Header() {
 
         <Link href="/register">
           <Button className="font-semibold shadow-sm">
-            Sign Up
+            {user ? `Welcome, ${user.name}` : 'Register Now'}
           </Button>
         </Link>
       </div>

@@ -39,16 +39,11 @@ export async function registerUser(
       name: username,
       email,
       passwordHash,
-      // Default role is 'student' as per schema, no need to set here
       role: "student",
     });
-
-    revalidatePath("/dashboard"); // Revalidate any cached data that might show user counts or similar
-    redirect("/signin"); // Redirect to sign-in page after successful registration
   } catch (e: any) {
     console.error("Registration error:", e);
-    // Check for unique constraint violation (e.g., duplicate email)
-    if (e.message && e.message.includes("UNIQUE constraint failed")) {
+    if (e.message?.includes("UNIQUE constraint failed")) {
       return {
         message:
           "Registration failed: An account with this email already exists.",
@@ -58,4 +53,7 @@ export async function registerUser(
       message: "Registration failed: An unexpected error occurred.",
     };
   }
+
+  revalidatePath("/dashboard");
+  redirect("/signin");
 }
