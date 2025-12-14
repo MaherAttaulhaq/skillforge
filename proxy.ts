@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+export { auth as middleware } from "@/auth"
 import type { NextRequest } from "next/server";
 
 export function proxy(request: NextRequest) {
