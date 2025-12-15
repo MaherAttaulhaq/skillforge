@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { db } from "@/db/db";
+import { db } from "@/db";
 import { users } from "@/db/schema";
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
@@ -53,11 +53,11 @@ export async function loginUser(
     const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
     const session = await encrypt({ user, expires });
 
-    cookies().set("session", session, { expires, httpOnly: true });
+    (await cookies()).set("session", session, { expires, httpOnly: true });
 
     console.log("User logged in successfully:", user.email);
 
-    redirect("/dashboard"); // Redirect to the dashboard or a protected route
+    redirect("/profile"); // Redirect to the dashboard or a protected route
 
   } catch (e: any) {
     console.error("Login error:", e);

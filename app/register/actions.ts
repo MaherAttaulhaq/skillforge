@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { db } from "@/db/db";
+import  db  from "@/db";
 import { users } from "@/db/schema";
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
@@ -41,7 +41,7 @@ export async function registerUser(
       passwordHash,
       role: "student",
     });
-  } catch (e: any) {
+  } catch (e: string | any) {
     console.error("Registration error:", e);
     if (e.message?.includes("UNIQUE constraint failed")) {
       return {
@@ -54,6 +54,6 @@ export async function registerUser(
     };
   }
 
-  revalidatePath("/dashboard");
-  redirect("/signin");
+  revalidatePath("/");
+  redirect("/profile");
 }

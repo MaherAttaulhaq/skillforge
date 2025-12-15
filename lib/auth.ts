@@ -3,10 +3,10 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
-const secretKey = process.env.SESSION_SECRET;
+const secretKey = process.env.AUTH_SECRET;
 
 if (!secretKey) {
-  throw new Error("SESSION_SECRET is not defined");
+  throw new Error("AUTH_SECRET is not defined");
 }
 
 const key = new TextEncoder().encode(secretKey);
