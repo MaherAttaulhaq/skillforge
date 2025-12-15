@@ -9,7 +9,7 @@ export const authConfig = {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
       const isApiRoute = nextUrl.pathname.startsWith("/api");
-      const paths = ["/dashboard", "/api"];
+      const paths = ["/dashboard", "/api", "/profile", "/teacher", "/courses", "/courses/create"];
       const isProtectedPage = paths.some((path) =>
         nextUrl.pathname.startsWith(path)
       );

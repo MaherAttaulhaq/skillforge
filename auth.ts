@@ -40,11 +40,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         console.log("User from DB:", user);
 
-        if (user && user.password) {
+        if (user && user.passwordHash) {
           console.log("Comparing passwords...");
           const passwordsMatch = await bcrypt.compare(
             credentials.password as string,
-            user.password
+            user.passwordHash
           );
           console.log("Passwords match:", passwordsMatch);
 

@@ -36,13 +36,13 @@ export default function Page() {
   return (
     <Card className="w-full max-w-sm mx-auto my-10">
       <CardHeader>
-        <CardTitle>Login to your account</CardTitle>
+        <CardTitle>Login</CardTitle>
         <CardDescription>
           Enter your email below to login to your account
         </CardDescription>
         <CardAction>
           <Link href="/register">
-            <Button variant="link"> Dont have an account? Sign Up</Button>
+            <Button variant="link"> Don't have an account? Sign Up</Button>
           </Link>
         </CardAction>
       </CardHeader>
@@ -64,13 +64,11 @@ export default function Page() {
               <Input id="password" name="password" type="password" required />
             </div>
           </div>
-          {state.message && (
+          {.message && (
             <p className="text-red-500 text-sm mt-4">{state.message}</p>
           )}
           <div className="mt-6">
-            <Link href="/dashboard" className="text-sm underline mb-4 block">
             <SubmitButton />
-            </Link>
           </div>
         </form>
       </CardContent>
