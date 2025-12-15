@@ -42,7 +42,7 @@ export default function Page() {
         </CardDescription>
         <CardAction>
           <Link href="/register">
-            <Button variant="link"> Don't have an account? Sign Up</Button>
+            <Button variant="link">Create an account</Button>
           </Link>
         </CardAction>
       </CardHeader>
