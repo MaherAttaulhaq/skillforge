@@ -26,7 +26,7 @@ function SubmitButton() {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" className="w-full" disabled={pending}>
-      {pending ? "Registering..." : "Register"}
+      {pending ? "Registering..." : "Create account"}
     </Button>
   );
 }
@@ -37,13 +37,13 @@ export default function Page() {
   return (
     <Card className="w-full max-w-sm mx-auto my-10">
       <CardHeader>
-        <CardTitle>Register for an account</CardTitle>
+        <CardTitle>Create an account</CardTitle>
         <CardDescription>
-          Enter your details below to create your account
+          Enter your details below to register your account
         </CardDescription>
         <CardAction>
           <Link href="/signin">
-            <Button variant="link">Already have an account? Login</Button>
+            <Button variant="link">Already have an account? Sign In</Button>
           </Link>
         </CardAction>
       </CardHeader>

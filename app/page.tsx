@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { FileText, Briefcase, Users } from "lucide-react"
-import Image from "next/image"
+
+
+import Link from "next/link"
+
 
 export default function Home() {
   return (
@@ -19,23 +20,13 @@ export default function Home() {
                   Get instant feedback, match with top jobs, and join a community of learners.
                 </h2>
               </div>
-              <div className="mx-auto w-full max-w-lg lg:mx-0">
-                <form className="group relative">
-                  <Input
-                    className="h-14 w-full rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/50 py-3 pl-6 pr-32 text-base shadow-sm transition placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:focus-visible:ring-offset-background"
-                    placeholder="Drop your resume here or click to upload"
-                    type="file"
-                  />
-                  <Button
-                    className="absolute inset-y-1.5 right-1.5 flex h-11 items-center justify-center rounded-full px-6 text-sm font-semibold shadow-md transition-all"
-                    type="submit"
-                  >
-                    Analyze Now
-                  </Button>
-                </form>
-                <p className="mt-3 text-center text-xs text-muted-foreground">
-                  Free analysis, no sign-up required. PDF, DOCX supported.
-                </p>
+              <div className="flex flex-col gap-8 md:flex-row">
+                <Link href="/courses">
+                  <Button size="lg">Explore Courses</Button>
+                </Link>
+                <Link href="/jobs">
+                  <Button size="lg" variant="outline">Browse Jobs</Button>
+                </Link>
               </div>
             </div>
             <div className="relative flex items-center justify-center">

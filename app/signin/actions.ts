@@ -8,7 +8,8 @@ export async function loginUser(
   formData: FormData
 ) {
   try {
-    await signIn("credentials", formData);
+    await signIn("credentials", { ...Object.fromEntries(formData), redirectTo: "/profile" });
+    console.log("signIn completed successfully, attempting redirect to /profile");
   } catch (error) {
     if (error instanceof AuthError) {
       switch (error.type) {

@@ -8,6 +8,7 @@ try {
   const sqlite = new Database("./sqlite.db");
   sqlite.pragma("foreign_keys = ON");
   db = drizzle(sqlite, { schema });
+  console.log("✅ Database connected successfully!");
 } catch (error) {
   console.error("Failed to connect to the database:", error);
   throw error; // Re-throw the error to ensure the application fails loudly

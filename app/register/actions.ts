@@ -55,5 +55,5 @@ export async function registerUser(
   }
 
   revalidatePath("/");
-  redirect("/profile");
+  redirect("/");
 }

@@ -19,6 +19,7 @@ import {
 } from "./schema";
 
 async function seed() {
+  console.log("🌱 Starting SkillForge seeding...");
   console.log("🌱 Seeding SkillForge...");
 
   // Clear existing data

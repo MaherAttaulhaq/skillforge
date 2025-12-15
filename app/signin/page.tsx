@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import {  useFormStatus } from "react-dom";
+import { useFormStatus } from "react-dom";
 import { loginUser } from "./actions";
 import { useActionState } from "react";
 
@@ -31,18 +31,18 @@ function SubmitButton() {
 }
 
 export default function Page() {
-  const [state, formAction] = useActionState(loginUser, initialState);
+  const [state, formAction] = useActionState(loginUser, initialState.message);
 
   return (
     <Card className="w-full max-w-sm mx-auto my-10">
       <CardHeader>
         <CardTitle>Login</CardTitle>
         <CardDescription>
-          Enter your email below to login to your account
+          Enter your email below to sign in to your account
         </CardDescription>
         <CardAction>
           <Link href="/register">
-            <Button variant="link">Create an account</Button>
+            <Button variant="link"> Don't have an account? Sign Up</Button>
           </Link>
         </CardAction>
       </CardHeader>
@@ -64,7 +64,7 @@ export default function Page() {
               <Input id="password" name="password" type="password" required />
             </div>
           </div>
-          {.message && (
+          {state?.message && (
             <p className="text-red-500 text-sm mt-4">{state.message}</p>
           )}
           <div className="mt-6">
