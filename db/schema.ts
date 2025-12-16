@@ -10,9 +10,14 @@ export const users = sqliteTable("users", {
   email: text("email").unique().notNull(),
   passwordHash: text("password_hash").notNull(),
   avatar: text("avatar"),
-  role: text("role").default("student"), // student | instructor | admin
+  role: text("role").$type<UserRole>().default("student"), // student | instructor | admin
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
+
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
+export type UserRole = "student" | "instructor" | "admin";
+
 
 /* ---------------- CATEGORIES ---------------- */
 export const categories = sqliteTable("categories", {
@@ -178,6 +183,7 @@ export const jobs = sqliteTable("jobs", {
   deletedAt: text("deleted_at"),
   isDeleted: integer("is_deleted", { mode: "boolean" }).default(false),
 });
+
 // ---------------- ACCOUNTS ----------------
 export const accounts = sqliteTable("accounts", {
   id: integer("id").primaryKey({ autoIncrement: true }),

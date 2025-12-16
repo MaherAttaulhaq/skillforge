@@ -36,13 +36,13 @@ export default function Page() {
   return (
     <Card className="w-full max-w-sm mx-auto my-10">
       <CardHeader>
-        <CardTitle>Login</CardTitle>
+        <CardTitle>Login to your account</CardTitle>
         <CardDescription>
           Enter your email below to sign in to your account
         </CardDescription>
         <CardAction>
           <Link href="/register">
-            <Button variant="link"> Don't have an account? Sign Up</Button>
+            <Button variant="link"> Sign Up</Button>
           </Link>
         </CardAction>
       </CardHeader>
@@ -75,3 +75,4 @@ export default function Page() {
     </Card>
   );
 }
+

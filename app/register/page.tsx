@@ -43,7 +43,7 @@ export default function Page() {
         </CardDescription>
         <CardAction>
           <Link href="/signin">
-            <Button variant="link">Already have an account? Sign In</Button>
+            <Button variant="link"> Sign In</Button>
           </Link>
         </CardAction>
       </CardHeader>

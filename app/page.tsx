@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button"
 import { Briefcase, FileText, Users } from "lucide-react"
-import Image from "next/image"
 
 
 import Link from "next/link"
@@ -34,7 +33,7 @@ export default function Home() {
             <div className="relative flex items-center justify-center">
               <div className="relative w-full max-w-lg rounded-xl">
                 <div className="absolute -inset-2 rounded-xl bg-gradient-to-br from-primary to-accent opacity-20 blur-2xl"></div>
-                <Image
+                <img
                   alt="A modern, abstract AI illustration showing interconnected nodes, representing career paths and data analysis."
                   className="relative w-full h-full object-cover rounded-2xl shadow-lg"
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuAxMLOq2Lga7_dM2B9y2N3ycyCYi6pkJXyJ-9l4_0zLDPmrX1Utj23OdEk0UoCd9HS3w1E7hyQz9MxCf3laVbp4ucMrKZh8bn6lT_5N8PuoS3CQHJe0yX2XKpkaepBSD-XEH7k8MF7ZL7h9MuIy2s44u3Fbmn2_d_-JkvlfkvfV80yeu6QLWJrcQehMcA5MYk2Hgwm_EepYO3Cp9VUn6bSB24MHeqjfs3ao_U-r-byjiRb1MaTX8zCX9RmErzFLB_ZhdAqlduVPamk"

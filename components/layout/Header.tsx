@@ -1,18 +1,12 @@
-import { db } from "@/db";
-import { getSession } from '@/lib/auth';
+import { auth } from "@/auth";
 import { Button } from "@/components/ui/button"
 import { BrainCircuit } from "lucide-react"
-import React from "react"
 import Link from "next/link"
+import UserMenu from "./user-menu";
 
 export default async function Header() {
-  const session = await getSession();
-  let user = null;
-  if (session) {
-    user = await db.query.users.findFirst({
-      where: (users, { eq }) => eq(users.id, session.userId),
-    });
-  }
+  const session = await auth();
+  const user = session?.user;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 dark:border-slate-800/80 bg-background/80 backdrop-blur-sm">
@@ -42,11 +36,17 @@ export default async function Header() {
           </Link>
         </div>
 
-        <Link href="/register">
-          <Button className="font-semibold shadow-sm">
-            {user ? `${user.name}` : 'Register Now'}
-          </Button>
-        </Link>
+        <div>
+          {user ?
+            <UserMenu user={user} />
+            :
+            <Link href="/register">
+              <Button className="font-semibold shadow-sm">
+                Register Now
+              </Button>
+            </Link>
+          }
+        </div>
       </div>
     </header >
   )

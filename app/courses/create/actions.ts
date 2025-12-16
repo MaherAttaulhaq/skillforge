@@ -8,6 +8,11 @@ import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { courses, modules, lessons } from "@/db/schema";
 import { z } from "zod";
+import { auth } from "@/auth";
+import { hasPermission } from "@/lib/rbac";
+import { PERMISSIONS } from "@/lib/permissions";
+import { users } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 const courseSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -100,7 +105,7 @@ function parseModulesFromFormData(formData: FormData) {
   return modules;
 }
 
-async function saveFile(file: File) {
+async function saveFile(file: File): Promise<string | null> {
   try {
     console.log(`[saveFile] Attempting to save file: ${file.name}`);
     const uploadsDir = path.join(process.cwd(), "public", "uploads");
@@ -138,6 +143,18 @@ export async function createCourse(
   prevState: { message: string; errors?: { [key: string]: string[] } },
   formData: FormData
 ) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { message: "Error: Not authenticated." };
+  }
+
+  const userRole = session?.user?.role;
+  const canCreateCourse = hasPermission(userRole, PERMISSIONS.create_courses);
+
+  if (!canCreateCourse) {
+    return { message: "Error: You don't have permission to create courses." };
+  }
+
   const parsedModules = parseModulesFromFormData(formData);
 
   const validatedFields = courseSchema.safeParse({
@@ -166,12 +183,16 @@ export async function createCourse(
     modules: moduleData,
   } = validatedFields.data;
 
-  // For now, let's assume a hardcoded instructorId
-  const instructorId = 8; // In a real app, get this from the session/user context
+  const instructorId = parseInt(session.user.id, 10);
 
   let newCourse: { id: number; slug: string } | undefined;
   try {
     const thumbnailUrl = await saveFile(thumbnail);
+    if (!thumbnailUrl) {
+      return {
+        message: "Error: Failed to save thumbnail.",
+      };
+    }
 
     [newCourse] = await db
       .insert(courses)
@@ -189,7 +210,7 @@ export async function createCourse(
     if (!newCourse) {
       throw new Error("Failed to create course.");
     }
-
+    
     for (const [moduleIndex, module] of moduleData.entries()) {
       const [newModule] = await db
         .insert(modules)
@@ -203,7 +224,7 @@ export async function createCourse(
       for (const [lessonIndex, lesson] of module.lessons.entries()) {
         let videoUrl: string | undefined;
         if (lesson.video) {
-          videoUrl = await saveFile(lesson.video);
+          videoUrl = await saveFile(lesson.video as File);
         }
 
         await db.insert(lessons).values({

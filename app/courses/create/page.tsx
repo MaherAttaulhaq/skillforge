@@ -4,8 +4,21 @@ import Link from "next/link";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { db } from "@/db";
+import { auth } from "@/auth";
+import { hasPermission } from "@/lib/rbac";
+import { PERMISSIONS } from "@/lib/permissions";
+import { redirect } from "next/navigation";
 
 export default async function CreateCoursePage() {
+  const session = await auth();
+  const userRole = session?.user?.role;
+
+  const canCreateCourse = hasPermission(userRole, PERMISSIONS.create_courses);
+
+  if (!canCreateCourse) {
+    redirect("/");
+  }
+
   const categories = await db.query.categories.findMany();
 
   return (
