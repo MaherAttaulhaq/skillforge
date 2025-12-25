@@ -26,6 +26,8 @@ export const categories = sqliteTable("categories", {
   slug: text("slug").unique().notNull(),
 });
 
+export type Category = typeof categories.$inferSelect;
+
 /* ---------------- COURSES ---------------- */
 export const courses = sqliteTable("courses", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -52,9 +54,29 @@ export const posts = sqliteTable("posts", {
   authorId: integer("author_id")
     .references(() => users.id)
     .notNull(),
+  categoryId: integer("category_id")
+    .references(() => categories.id)
+    .notNull(),
   mediaUrl: text("media_url"),
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
+
+/* ---------------- TAGS ---------------- */
+export const tags = sqliteTable("tags", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").unique().notNull(),
+});
+
+export type Tag = typeof tags.$inferSelect;
+
+/* ---------------- POSTS_TAGS ---------------- */
+export const posts_tags = sqliteTable("posts_tags", {
+  postId: integer("post_id").references(() => posts.id).notNull(),
+  tagId: integer("tag_id").references(() => tags.id).notNull(),
+}, (table) => ({
+  pk: primaryKey(table.postId, table.tagId),
+}));
+
 
 /* ---------------- COMMENTS ---------------- */
 export const comments = sqliteTable("comments", {

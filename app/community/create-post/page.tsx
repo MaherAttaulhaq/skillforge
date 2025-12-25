@@ -1,9 +1,13 @@
 import { CreatePostForm } from "../CreatePostForm";
+import { db } from "@/db";
+import { categories } from "@/db/schema";
 
-export default function CreatePostPage() {
+export default async function CreatePostPage() {
+  const allCategories = await db.select().from(categories);
+
   return (
-    <div className="container mx-auto p-4 md:p-6 lg:p-8">
-      <CreatePostForm />
+    <div className="flex-1 flex items-center justify-center p-4 md:p-6 lg:p-8">
+      <CreatePostForm categories={allCategories} />
     </div>
   );
 }

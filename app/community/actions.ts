@@ -4,8 +4,9 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { db } from "@/db";
-import { comments, posts } from "@/db/schema";
+import { comments, posts, posts_tags, tags } from "@/db/schema";
 import { revalidatePath } from "next/cache";
+import { eq } from "drizzle-orm";
 
 async function saveFile(file: File) {
   const uploadsDir = path.join(process.cwd(), "public", "uploads");
@@ -34,7 +35,7 @@ export async function addComment(postId: number, content: string) {
     revalidatePath("/community");
   }
 }
-// make a form action to create a post
+
 export async function createPost(
   prevState: { message: string; success: boolean } | undefined,
   formData: FormData
@@ -48,11 +49,15 @@ export async function createPost(
 
   const title = formData.get("title") as string;
   const content = formData.get("content") as string;
+  const categoryId = formData.get("categoryId") as string;
+  const tagsString = formData.get("tags") as string;
   const media = formData.get("media") as File;
 
-  // Validate input
-  if (!title || !content) {
-    return { message: "Title and content are required", success: false };
+  if (!title || !content || !categoryId) {
+    return {
+      message: "Title, content, and category are required",
+      success: false,
+    };
   }
 
   let mediaUrl: string | undefined;
@@ -61,14 +66,38 @@ export async function createPost(
       mediaUrl = await saveFile(media);
     }
 
-    await db.insert(posts).values({
-      title,
-      content,
-      authorId: userId,
-      mediaUrl,
-    });
+    const [newPost] = await db
+      .insert(posts)
+      .values({
+        title,
+        content,
+        authorId: userId,
+        categoryId: parseInt(categoryId, 10),
+        mediaUrl,
+      })
+      .returning();
+
+    const tagNames = tagsString.split(",").filter(Boolean);
+    if (tagNames.length > 0) {
+      const tagIds: number[] = [];
+      for (const tagName of tagNames) {
+        let [tag] = await db.select().from(tags).where(eq(tags.name, tagName));
+        if (!tag) {
+          [tag] = await db.insert(tags).values({ name: tagName }).returning();
+        }
+        tagIds.push(tag.id);
+      }
+      
+      await db.insert(posts_tags).values(
+        tagIds.map((tagId) => ({
+          postId: newPost.id,
+          tagId: tagId,
+        }))
+      );
+    }
 
     revalidatePath("/community");
+    revalidatePath("/community/create-post");
     return {
       message: "🎉 Post created successfully! Your post is now live.",
       success: true,

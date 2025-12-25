@@ -2,28 +2,38 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  PlusCircle,
-  ThumbsUp,
-  MessageSquare,
-  Share2,
-  ChevronDown,
-} from "lucide-react";
+import { PlusCircle, ThumbsUp, MessageSquare, Share2 } from "lucide-react";
 import Link from "next/link";
 import { db } from "@/db";
-import { posts as postsTable, users, categories } from "@/db/schema";
-import { desc, eq } from "drizzle-orm";
+import {
+  posts as postsTable,
+  tags,
+  posts_tags,
+  users,
+  categories,
+  comments,
+} from "@/db/schema";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { formatDistanceToNow } from "date-fns";
 import { NavLink } from "@/components/nav-link";
+import { PostFilters } from "@/components/PostFilters";
 
-export default async function CommunityPage() {
-  // Fetch users for contributors and post authors
-  const allUsers = await db.select().from(users).limit(10);
+type CommunityPageProps = {
+  searchParams: {
+    category?: string;
+    sort?: "latest" | "popular" | "most-voted";
+    tag?: string;
+  };
+};
 
-  // Fetch categories for trending tags
+export default async function CommunityPage({
+  searchParams,
+}: CommunityPageProps) {
+  const { category, sort = "latest", tag } = await searchParams;
+
   const allCategories = await db.select().from(categories);
 
-  const postsData = await db
+  const postsQuery = db
     .select({
       id: postsTable.id,
       title: postsTable.title,
@@ -33,12 +43,63 @@ export default async function CommunityPage() {
       mediaUrl: postsTable.mediaUrl,
       authorName: users.name,
       authorAvatar: users.avatar,
+      categorySlug: categories.slug,
+      categoryTitle: categories.title,
+      commentCount: sql<number>`count(${comments.id})`,
     })
     .from(postsTable)
     .leftJoin(users, eq(postsTable.authorId, users.id))
-    .orderBy(desc(postsTable.createdAt));
+    .leftJoin(categories, eq(postsTable.categoryId, categories.id))
+    .leftJoin(comments, eq(postsTable.id, comments.postId));
 
-  // Generate dynamic posts from courses and users
+  if (tag) {
+    postsQuery
+      .innerJoin(posts_tags, eq(postsTable.id, posts_tags.postId))
+      .innerJoin(tags, eq(posts_tags.tagId, tags.id));
+  }
+
+  const conditions = [];
+  if (category && category !== "all") {
+    conditions.push(eq(categories.slug, category));
+  }
+  if (tag) {
+    conditions.push(eq(tags.name, tag));
+  }
+
+  if (conditions.length > 0) {
+    postsQuery.where(and(...conditions));
+  }
+
+  postsQuery.groupBy(
+    postsTable.id,
+    users.name,
+    users.avatar,
+    categories.slug,
+    categories.title
+  );
+
+  if (sort === "popular" || sort === "most-voted") {
+    postsQuery.orderBy(desc(sql<number>`count(${comments.id})`));
+  } else {
+    postsQuery.orderBy(desc(postsTable.createdAt));
+  }
+
+  const postsData = await postsQuery;
+  const postIds = postsData.map((p) => p.id);
+
+  let allTagsForPosts: { postId: number; tag: string }[] = [];
+  if (postIds.length > 0) {
+    const tagsData = await db
+      .select({
+        postId: posts_tags.postId,
+        tag: tags.name,
+      })
+      .from(posts_tags)
+      .innerJoin(tags, eq(posts_tags.tagId, tags.id))
+      .where(inArray(posts_tags.postId, postIds));
+    allTagsForPosts = tagsData;
+  }
+
   const posts = postsData.map((post) => {
     let timeAgo = "N/A";
     if (post.createdAt) {
@@ -52,9 +113,14 @@ export default async function CommunityPage() {
       }
     }
 
+    const postTags = allTagsForPosts
+      .filter((t) => t.postId === post.id)
+      .map((t) => t.tag);
+
     return {
       id: post.id,
       title: post.title,
+      authorId: post.authorId,
       author: post.authorName || "Anonymous",
       authorAvatar: post.authorAvatar,
       authorInitials: (post.authorName || "Anonymous")
@@ -64,24 +130,47 @@ export default async function CommunityPage() {
       time: timeAgo,
       content: post.content,
       mediaUrl: post.mediaUrl,
-      tags: ["AI", "Resume", "Career Advice"],
-      likes: 12,
-      comments: 5,
+      tags: postTags,
+      likes: 12, // Dummy data
+      comments: post.commentCount || 0,
     };
   });
 
-  // Generate trending tags from categories
-  const trendingTags = allCategories.map((cat, index) => ({
-    tag: `#${cat.slug}`,
-    count: `${Math.max(50, 200 - index * 30)} posts`,
+  const trendingTagsResult = await db
+    .select({
+      tag: tags.name,
+      count: sql<number>`count(${posts_tags.postId})`.mapWith(Number),
+    })
+    .from(tags)
+    .innerJoin(posts_tags, eq(tags.id, posts_tags.tagId))
+    .groupBy(tags.name)
+    .orderBy(desc(sql<number>`count(${posts_tags.postId})`))
+    .limit(10);
+
+  const trendingTags = trendingTagsResult.map((item) => ({
+    tag: `#${item.tag}`,
+    count: `${item.count} posts`,
   }));
 
-  // Get top contributors from users
-  const topContributors = allUsers.slice(0, 3).map((user, index) => ({
-    name: user.name,
-    contributions: `${128 - index * 26} contributions`,
-    img: user.avatar,
-    fallback: user.name
+  const topContributorsData = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      avatar: users.avatar,
+      contributions: sql<number>`count(${postsTable.id})`.mapWith(Number),
+    })
+    .from(postsTable)
+    .innerJoin(users, eq(postsTable.authorId, users.id))
+    .groupBy(users.id, users.name, users.avatar)
+    .orderBy(desc(sql<number>`count(${postsTable.id})`))
+    .limit(5);
+
+  const topContributors = topContributorsData.map((contributor) => ({
+    id: contributor.id,
+    name: contributor.name,
+    contributions: `${contributor.contributions} contributions`,
+    img: contributor.avatar,
+    fallback: contributor.name
       .split(" ")
       .map((n) => n[0])
       .join(""),
@@ -108,32 +197,9 @@ export default async function CommunityPage() {
                 </Button>
               </NavLink>
             </div>
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                <Button
-                  variant="default"
-                  className="rounded-full h-9 px-4 text-sm font-medium"
-                >
-                  All Posts
-                </Button>
-                {allCategories.slice(0, 4).map((category) => (
-                  <Button
-                    key={category.id}
-                    variant="ghost"
-                    className="rounded-full h-9 px-4 text-sm font-medium bg-card hover:bg-accent hover:text-accent-foreground"
-                  >
-                    {category.title}
-                  </Button>
-                ))}
-              </div>
-              <Button
-                variant="outline"
-                className="gap-2 h-9 px-3 text-sm font-medium bg-card"
-              >
-                <span>Sort by: Latest</span>
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-              </Button>
-            </div>
+
+            <PostFilters categories={allCategories} />
+
             <div className="flex flex-col gap-4">
               {posts.map((post) => (
                 <Card
@@ -156,7 +222,14 @@ export default async function CommunityPage() {
                           {post.title}
                         </h3>
                         <p className="text-sm text-muted-foreground">
-                          Posted by {post.author}, {post.time}
+                          Posted by{" "}
+                          <Link
+                            href={`/profile/${post.authorId}`}
+                            className="font-medium text-primary hover:underline"
+                          >
+                            {post.author}
+                          </Link>
+                          , {post.time}
                         </p>
                         <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
                           {post.content}
@@ -164,7 +237,7 @@ export default async function CommunityPage() {
                         {post.mediaUrl && (
                           <div className="mt-3">
                             {post.mediaUrl.endsWith(".mp4") ||
-                            post.mediaUrl.endsWith(".webm") ? (
+                              post.mediaUrl.endsWith(".webm") ? (
                               <video
                                 src={post.mediaUrl}
                                 controls
@@ -237,7 +310,7 @@ export default async function CommunityPage() {
                     <Link
                       key={item.tag}
                       className="flex justify-between text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-                      href="#"
+                      href={`/community?tag=${item.tag.substring(1)}`}
                     >
                       <span>{item.tag}</span>
                       <span>{item.count}</span>
@@ -254,9 +327,10 @@ export default async function CommunityPage() {
                   </h4>
                   <div className="flex flex-col gap-4">
                     {topContributors.map((contributor) => (
-                      <div
-                        key={contributor.name}
-                        className="flex items-center gap-3"
+                      <Link
+                        key={contributor.id}
+                        href={`/profile/${contributor.id}`}
+                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
                       >
                         <Avatar className="h-10 w-10">
                           {contributor.img && (
@@ -277,7 +351,7 @@ export default async function CommunityPage() {
                             {contributor.contributions}
                           </p>
                         </div>
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 </CardContent>

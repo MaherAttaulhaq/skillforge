@@ -16,6 +16,8 @@ import {
   jobs,
   posts,
   comments,
+  posts_tags,
+  tags,
 } from "./schema";
 
 async function seed() {
@@ -23,6 +25,8 @@ async function seed() {
   console.log("🌱 Seeding SkillForge...");
 
   // Clear existing data
+  await db.delete(posts_tags);
+  await db.delete(tags);
   await db.delete(comments);
   await db.delete(posts);
   await db.delete(jobs);
@@ -243,9 +247,12 @@ async function seed() {
       type: "Full-time",
       workMode: "Remote",
       experience: "5+ Years",
-      description: "As a Senior Frontend Engineer at Stripe, you will be responsible for leading frontend projects from concept to launch. You'll work closely with product managers, engineers, and other stakeholders to create intuitive, elegant, and effective user experiences for our global customer base.",
-      requirements: "5+ years of experience in frontend development. Proficiency in React, TypeScript, and modern frontend tools. Experience with GraphQL and Next.js is a plus.",
-      benefits: "Competitive salary, equity, health insurance, remote work options, and more."
+      description:
+        "As a Senior Frontend Engineer at Stripe, you will be responsible for leading frontend projects from concept to launch. You'll work closely with product managers, engineers, and other stakeholders to create intuitive, elegant, and effective user experiences for our global customer base.",
+      requirements:
+        "5+ years of experience in frontend development. Proficiency in React, TypeScript, and modern frontend tools. Experience with GraphQL and Next.js is a plus.",
+      benefits:
+        "Competitive salary, equity, health insurance, remote work options, and more.",
     },
     {
       title: "Product Manager, AI",
@@ -259,9 +266,12 @@ async function seed() {
       type: "Full-time",
       workMode: "Remote",
       experience: "7+ Years",
-      description: "Join Google's AI team to shape the future of intelligent products. You will define product strategy, work with engineering teams to build AI-powered features, and launch products that impact millions of users.",
-      requirements: "7+ years of product management experience. Strong background in AI/ML technologies. Excellent communication and leadership skills.",
-      benefits: "World-class benefits, including health, dental, vision, 401k, and more."
+      description:
+        "Join Google's AI team to shape the future of intelligent products. You will define product strategy, work with engineering teams to build AI-powered features, and launch products that impact millions of users.",
+      requirements:
+        "7+ years of product management experience. Strong background in AI/ML technologies. Excellent communication and leadership skills.",
+      benefits:
+        "World-class benefits, including health, dental, vision, 401k, and more.",
     },
     {
       title: "UX/UI Designer",
@@ -275,9 +285,12 @@ async function seed() {
       type: "Full-time",
       workMode: "On-site",
       experience: "3+ Years",
-      description: "Figma is looking for a talented UX/UI Designer to join our growing team. You will design beautiful and functional interfaces, conduct user research, and collaborate with product teams to deliver exceptional user experiences.",
-      requirements: "3+ years of experience in UX/UI design. Proficiency in Figma and other design tools. Strong portfolio showcasing your design process and work.",
-      benefits: "Competitive salary, stock options, health benefits, and a creative work environment."
+      description:
+        "Figma is looking for a talented UX/UI Designer to join our growing team. You will design beautiful and functional interfaces, conduct user research, and collaborate with product teams to deliver exceptional user experiences.",
+      requirements:
+        "3+ years of experience in UX/UI design. Proficiency in Figma and other design tools. Strong portfolio showcasing your design process and work.",
+      benefits:
+        "Competitive salary, stock options, health benefits, and a creative work environment.",
     },
     {
       title: "Data Scientist",
@@ -291,9 +304,12 @@ async function seed() {
       type: "Contract",
       workMode: "Hybrid",
       experience: "4+ Years",
-      description: "Shopify is seeking a Data Scientist to help us make data-driven decisions. You will analyze large datasets, build predictive models, and communicate insights to stakeholders to drive business growth.",
-      requirements: "4+ years of experience in data science. Proficiency in Python, SQL, and data visualization tools. Strong analytical and problem-solving skills.",
-      benefits: "Flexible work arrangements, professional development opportunities, and a collaborative team culture."
+      description:
+        "Shopify is seeking a Data Scientist to help us make data-driven decisions. You will analyze large datasets, build predictive models, and communicate insights to stakeholders to drive business growth.",
+      requirements:
+        "4+ years of experience in data science. Proficiency in Python, SQL, and data visualization tools. Strong analytical and problem-solving skills.",
+      benefits:
+        "Flexible work arrangements, professional development opportunities, and a collaborative team culture.",
     },
   ]);
 
@@ -306,17 +322,22 @@ async function seed() {
         content:
           "I'm applying for a tech role and I've heard that many companies use AI to screen resumes. What are some key strategies to make sure my resume gets past the initial screening and is seen by a human recruiter?",
         authorId: ali.id,
+        categoryId: webDevCategory.id,
       },
+
       {
-        title: "Best practices for state management in large React applications?",
+        title:
+          "Best practices for state management in large React applications?",
         content: `Our team's React project is growing, and we're debating best practices. Looking for real-world insights from the community.`,
         authorId: sara.id,
+        categoryId: webDevCategory.id,
       },
       {
         title: "Common Behavioral Questions in FAANG Interviews",
         content:
           "I have a final round interview coming up and I want to be prepared for the behavioral questions. Can anyone share some common ones and how to best structure answers using the STAR method?",
         authorId: ali.id,
+        categoryId: webDevCategory.id,
       },
     ])
     .returning();
@@ -326,20 +347,39 @@ async function seed() {
   /* ---------------- COMMENTS ---------------- */
   await db.insert(comments).values([
     {
-      content: "Great question! I'd recommend focusing on keywords from the job description.",
+      content:
+        "Great question! I'd recommend focusing on keywords from the job description.",
       postId: post1.id,
       authorId: sara.id,
     },
     {
-      content: "I agree with Sara. Also, make sure your resume is in a simple, clean format that's easy for an ATS to parse.",
+      content:
+        "I agree with Sara. Also, make sure your resume is in a simple, clean format that's easy for an ATS to parse.",
       postId: post1.id,
       authorId: ali.id,
     },
     {
-      content: "We've had a lot of success with Zustand in our projects. It's simple and scalable.",
+      content:
+        "We've had a lot of success with Zustand in our projects. It's simple and scalable.",
       postId: post2.id,
       authorId: ali.id,
     },
+  ]);
+
+  /* ---------------- TAGS ---------------- */
+  const tagData = await db.insert(tags).values([
+    { name: "react" },
+    { name: "nextjs" },
+    { name: "typescript" },
+    { name: "career-advice" },
+    { name: "resume" },
+  ]).returning();
+
+  /* ---------------- POSTS_TAGS ---------------- */
+  await db.insert(posts_tags).values([
+    { postId: post1.id, tagId: tagData[3].id },
+    { postId: post1.id, tagId: tagData[4].id },
+    { postId: post2.id, tagId: tagData[0].id },
   ]);
 
   console.log("✅ Seeding completed!");
