@@ -4,9 +4,9 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { db } from "@/db";
-import { comments, posts, posts_tags, tags } from "@/db/schema";
+import { comments, posts, posts_tags, tags, likes, shares } from "@/db/schema";
 import { revalidatePath } from "next/cache";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 async function saveFile(file: File) {
   const uploadsDir = path.join(process.cwd(), "public", "uploads");
@@ -34,6 +34,32 @@ export async function addComment(postId: number, content: string) {
     });
     revalidatePath("/community");
   }
+}
+
+export async function toggleLike(postId: number) {
+  const userId = 1; // Hardcoded user ID for now
+
+  const existingLike = await db
+    .select()
+    .from(likes)
+    .where(and(eq(likes.postId, postId), eq(likes.userId, userId)))
+    .limit(1);
+
+  if (existingLike.length > 0) {
+    await db
+      .delete(likes)
+      .where(and(eq(likes.postId, postId), eq(likes.userId, userId)));
+  } else {
+    await db.insert(likes).values({ postId, userId });
+  }
+
+  revalidatePath("/community");
+}
+
+export async function sharePost(postId: number, platform: string = "web") {
+  const userId = 1; // Hardcoded user ID for now
+  await db.insert(shares).values({ postId, userId, platform });
+  revalidatePath("/community");
 }
 
 export async function createPost(
@@ -87,7 +113,7 @@ export async function createPost(
         }
         tagIds.push(tag.id);
       }
-      
+
       await db.insert(posts_tags).values(
         tagIds.map((tagId) => ({
           postId: newPost.id,

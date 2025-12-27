@@ -91,6 +91,28 @@ export const comments = sqliteTable("comments", {
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
+/* ---------------- LIKES ---------------- */
+export const likes = sqliteTable("likes", {
+  userId: integer("user_id")
+    .references(() => users.id)
+    .notNull(),
+  postId: integer("post_id")
+    .references(() => posts.id)
+    .notNull(),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.userId, table.postId] }),
+}));
+
+/* ---------------- SHARES ---------------- */
+export const shares = sqliteTable("shares", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  postId: integer("post_id").references(() => posts.id).notNull(),
+  platform: text("platform"),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
 /* ---------------- MODULES ---------------- */
 export const modules = sqliteTable("modules", {
   id: integer("id").primaryKey({ autoIncrement: true }),

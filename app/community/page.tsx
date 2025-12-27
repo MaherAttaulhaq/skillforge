@@ -12,12 +12,14 @@ import {
   users,
   categories,
   comments,
+  likes,
+  shares,
 } from "@/db/schema";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { formatDistanceToNow } from "date-fns";
 import { NavLink } from "@/components/nav-link";
 import { PostFilters } from "@/components/PostFilters";
-
+import { PostInteractions } from "./PostInteractions"
 type CommunityPageProps = {
   searchParams: {
     category?: string;
@@ -30,6 +32,7 @@ export default async function CommunityPage({
   searchParams,
 }: CommunityPageProps) {
   const { category, sort = "latest", tag } = await searchParams;
+  const currentUserId = 1; // Hardcoded user ID
 
   const allCategories = await db.select().from(categories);
 
@@ -45,12 +48,17 @@ export default async function CommunityPage({
       authorAvatar: users.avatar,
       categorySlug: categories.slug,
       categoryTitle: categories.title,
-      commentCount: sql<number>`count(${comments.id})`,
+      commentCount: sql<number>`count(distinct ${comments.id})`.mapWith(Number),
+      likeCount: sql<number>`count(distinct ${likes.userId})`.mapWith(Number),
+      shareCount: sql<number>`count(distinct ${shares.id})`.mapWith(Number),
+      isLiked: sql<number>`max(case when ${likes.userId} = ${currentUserId} then 1 else 0 end)`.mapWith(Boolean),
     })
     .from(postsTable)
     .leftJoin(users, eq(postsTable.authorId, users.id))
     .leftJoin(categories, eq(postsTable.categoryId, categories.id))
-    .leftJoin(comments, eq(postsTable.id, comments.postId));
+    .leftJoin(comments, eq(postsTable.id, comments.postId))
+    .leftJoin(likes, eq(postsTable.id, likes.postId))
+    .leftJoin(shares, eq(postsTable.id, shares.postId));
 
   if (tag) {
     postsQuery
@@ -79,9 +87,9 @@ export default async function CommunityPage({
   );
 
   if (sort === "popular" || sort === "most-voted") {
-    postsQuery.orderBy(desc(sql<number>`count(${comments.id})`));
+    postsQuery.orderBy(desc(sql<number>`count(distinct ${comments.id})`));
   } else {
-    postsQuery.orderBy(desc(postsTable.createdAt));
+    postsQuery.orderBy(asc(postsTable.createdAt));
   }
 
   const postsData = await postsQuery;
@@ -131,8 +139,10 @@ export default async function CommunityPage({
       content: post.content,
       mediaUrl: post.mediaUrl,
       tags: postTags,
-      likes: 12, // Dummy data
+      likes: post.likeCount || 0,
       comments: post.commentCount || 0,
+      shares: post.shareCount || 0,
+      isLiked: post.isLiked,
     };
   });
 
@@ -265,33 +275,13 @@ export default async function CommunityPage({
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between border-t pt-3">
-                      <div className="flex gap-4">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="gap-1.5 text-muted-foreground hover:text-primary group"
-                        >
-                          <ThumbsUp className="h-4 w-4 transition-transform group-hover:scale-110" />
-                          <span>{post.likes}</span>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="gap-1.5 text-muted-foreground hover:text-primary group"
-                        >
-                          <MessageSquare className="h-4 w-4 transition-transform group-hover:scale-110" />
-                          <span>{post.comments}</span>
-                        </Button>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="gap-1.5 text-muted-foreground hover:text-primary group"
-                      >
-                        <Share2 className="h-4 w-4 transition-transform group-hover:scale-110" />
-                      </Button>
-                    </div>
+                    <PostInteractions
+                      postId={post.id}
+                      initialLikes={post.likes}
+                      initialComments={post.comments}
+                      initialShares={post.shares}
+                      isLiked={post.isLiked}
+                    />
                   </CardContent>
                 </Card>
               ))}
