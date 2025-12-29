@@ -4,7 +4,15 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { db } from "@/db";
-import { comments, posts, posts_tags, tags, likes, shares } from "@/db/schema";
+import {
+  comments,
+  posts,
+  posts_tags,
+  tags,
+  likes,
+  shares,
+  users,
+} from "@/db/schema";
 import { revalidatePath } from "next/cache";
 import { eq, and } from "drizzle-orm";
 
@@ -23,10 +31,17 @@ async function saveFile(file: File) {
   return `/uploads/${newFilename}`;
 }
 
-export async function addComment(postId: number, content: string) {
-  const userId = 1; // Hardcoded user ID for now
+async function getCurrentUserId() {
+  const user = await db.query.users.findFirst({
+    where: eq(users.name, "Attaulhaq"),
+  });
+  return user?.id || 1;
+}
 
-  if (content) {
+export async function addComment(postId: number, content: string) {
+  const userId = await getCurrentUserId();
+
+  if (userId && content) {
     await db.insert(comments).values({
       content,
       postId,
@@ -37,7 +52,8 @@ export async function addComment(postId: number, content: string) {
 }
 
 export async function toggleLike(postId: number) {
-  const userId = 1; // Hardcoded user ID for now
+  const userId = await getCurrentUserId();
+  if (!userId) throw new Error("Unauthorized");
 
   const existingLike = await db
     .select()
@@ -57,8 +73,32 @@ export async function toggleLike(postId: number) {
 }
 
 export async function sharePost(postId: number, platform: string = "web") {
-  const userId = 1; // Hardcoded user ID for now
+  const userId = await getCurrentUserId();
+  if (!userId) throw new Error("Unauthorized");
   await db.insert(shares).values({ postId, userId, platform });
+  revalidatePath("/community");
+}
+
+export async function deleteComment(commentId: number) {
+  const userId = await getCurrentUserId();
+  if (!userId) throw new Error("Unauthorized");
+
+  // Only delete if the comment belongs to the current user
+  await db
+    .delete(comments)
+    .where(and(eq(comments.id, commentId), eq(comments.authorId, userId)));
+  revalidatePath("/community");
+}
+
+export async function editComment(commentId: number, content: string) {
+  const userId = await getCurrentUserId();
+  if (!userId) throw new Error("Unauthorized");
+
+  // Only update if the comment belongs to the current user
+  await db
+    .update(comments)
+    .set({ content })
+    .where(and(eq(comments.id, commentId), eq(comments.authorId, userId)));
   revalidatePath("/community");
 }
 
@@ -66,8 +106,7 @@ export async function createPost(
   prevState: { message: string; success: boolean } | undefined,
   formData: FormData
 ): Promise<{ message: string; success: boolean }> {
-  const user = await db.query.users.findFirst();
-  const userId = user?.id;
+  const userId = await getCurrentUserId();
 
   if (!userId) {
     return { message: "No user found to create post.", success: false };

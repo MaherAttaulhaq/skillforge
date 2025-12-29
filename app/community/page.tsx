@@ -20,19 +20,29 @@ import { formatDistanceToNow } from "date-fns";
 import { NavLink } from "@/components/nav-link";
 import { PostFilters } from "@/components/PostFilters";
 import { PostInteractions } from "./PostInteractions"
+import { PaginationControl } from "@/components/PaginationControl";
+
 type CommunityPageProps = {
   searchParams: {
     category?: string;
     sort?: "latest" | "popular" | "most-voted";
     tag?: string;
+    page?: string;
   };
 };
 
 export default async function CommunityPage({
   searchParams,
 }: CommunityPageProps) {
-  const { category, sort = "latest", tag } = await searchParams;
-  const currentUserId = 1; // Hardcoded user ID
+  const { category, sort = "latest", tag, page } = await searchParams;
+  const currentPage = page ? parseInt(page) : 1;
+  const pageSize = 2;
+  const offset = (currentPage - 1) * pageSize;
+
+  const currentUser = await db.query.users.findFirst({
+    where: eq(users.name, "Attaulhaq"),
+  });
+  const currentUserId = currentUser?.id || 1;
 
   const allCategories = await db.select().from(categories);
 
@@ -60,8 +70,17 @@ export default async function CommunityPage({
     .leftJoin(likes, eq(postsTable.id, likes.postId))
     .leftJoin(shares, eq(postsTable.id, shares.postId));
 
+  const countQuery = db
+    .select({ count: sql<number>`count(distinct ${postsTable.id})`.mapWith(Number) })
+    .from(postsTable)
+    .leftJoin(categories, eq(postsTable.categoryId, categories.id));
+
   if (tag) {
     postsQuery
+      .innerJoin(posts_tags, eq(postsTable.id, posts_tags.postId))
+      .innerJoin(tags, eq(posts_tags.tagId, tags.id));
+
+    countQuery
       .innerJoin(posts_tags, eq(postsTable.id, posts_tags.postId))
       .innerJoin(tags, eq(posts_tags.tagId, tags.id));
   }
@@ -76,6 +95,7 @@ export default async function CommunityPage({
 
   if (conditions.length > 0) {
     postsQuery.where(and(...conditions));
+    countQuery.where(and(...conditions));
   }
 
   postsQuery.groupBy(
@@ -92,7 +112,15 @@ export default async function CommunityPage({
     postsQuery.orderBy(asc(postsTable.createdAt));
   }
 
-  const postsData = await postsQuery;
+  postsQuery.limit(pageSize).offset(offset);
+
+  const [postsData, [totalResult]] = await Promise.all([
+    postsQuery,
+    countQuery,
+  ]);
+  const totalPosts = totalResult?.count || 0;
+  const totalPages = Math.ceil(totalPosts / pageSize);
+
   const postIds = postsData.map((p) => p.id);
 
   let allTagsForPosts: { postId: number; tag: string }[] = [];
@@ -107,6 +135,24 @@ export default async function CommunityPage({
       .where(inArray(posts_tags.postId, postIds));
     allTagsForPosts = tagsData;
   }
+
+  const commentsData =
+    postIds.length > 0
+      ? await db
+        .select({
+          id: comments.id,
+          postId: comments.postId,
+          content: comments.content,
+          authorId: comments.authorId,
+          createdAt: comments.createdAt,
+          authorName: users.name,
+          authorAvatar: users.avatar,
+        })
+        .from(comments)
+        .leftJoin(users, eq(comments.authorId, users.id))
+        .where(inArray(comments.postId, postIds))
+        .orderBy(desc(comments.createdAt))
+      : [];
 
   const posts = postsData.map((post) => {
     let timeAgo = "N/A";
@@ -124,6 +170,19 @@ export default async function CommunityPage({
     const postTags = allTagsForPosts
       .filter((t) => t.postId === post.id)
       .map((t) => t.tag);
+
+    const postComments = commentsData
+      .filter((c) => c.postId === post.id)
+      .map((c) => ({
+        id: c.id,
+        content: c.content,
+        authorId: c.authorId || 0,
+        authorName: c.authorName || "Anonymous",
+        authorAvatar: c.authorAvatar,
+        formattedTime: c.createdAt
+          ? formatDistanceToNow(new Date(c.createdAt)) + " ago"
+          : "Just now",
+      }));
 
     return {
       id: post.id,
@@ -143,6 +202,7 @@ export default async function CommunityPage({
       comments: post.commentCount || 0,
       shares: post.shareCount || 0,
       isLiked: post.isLiked,
+      commentsList: postComments,
     };
   });
 
@@ -185,6 +245,15 @@ export default async function CommunityPage({
       .map((n) => n[0])
       .join(""),
   }));
+
+  const createPageUrl = (pageNumber: number) => {
+    const params = new URLSearchParams();
+    if (category) params.set("category", category);
+    if (sort) params.set("sort", sort);
+    if (tag) params.set("tag", tag);
+    params.set("page", pageNumber.toString());
+    return `/community?${params.toString()}`;
+  };
 
   return (
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
@@ -281,10 +350,21 @@ export default async function CommunityPage({
                       initialComments={post.comments}
                       initialShares={post.shares}
                       isLiked={post.isLiked}
+                      comments={post.commentsList}
+                      currentUser={{
+                        name: currentUser?.name || "Anonymous",
+                        avatar: currentUser?.avatar || null,
+                      }}
+                      currentUserId={currentUserId}
                     />
                   </CardContent>
                 </Card>
               ))}
+              <PaginationControl
+                currentPage={currentPage}
+                totalPages={totalPages}
+                createPageUrl={createPageUrl}
+              />
             </div>
           </div>
         </div>

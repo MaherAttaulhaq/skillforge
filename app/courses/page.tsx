@@ -3,13 +3,14 @@ import {
   courses as coursesTable,
   categories as categoriesTable,
 } from "@/db/schema";
-import { like, or, and, SQL, eq } from "drizzle-orm";
+import { like, or, and, SQL, eq, sql } from "drizzle-orm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Signal, BookOpen, Search } from "lucide-react";
 import Link from "next/link";
 import CourseFilters from "@/components/CourseFilters";
 import { Metadata } from "next";
+import { PaginationControl } from "@/components/PaginationControl";
 
 export const metadata: Metadata = {
   title: "SkillForge - Courses",
@@ -69,6 +70,7 @@ interface SearchParams {
   search?: string;
   categories?: string;
   level?: string;
+  page?: string;
 }
 
 export default async function CoursesPage({
@@ -77,7 +79,10 @@ export default async function CoursesPage({
   searchParams: Promise<SearchParams>;
 }) {
   const params = await searchParams;
-  const { search, categories, level } = params;
+  const { search, categories, level, page } = params;
+  const currentPage = page ? parseInt(page) : 1;
+  const pageSize = 2;
+  const offset = (currentPage - 1) * pageSize;
 
   // Build database query with filters
   const conditions: SQL[] = [];
@@ -116,46 +121,54 @@ export default async function CoursesPage({
     conditions.push(eq(coursesTable.level, level));
   }
 
-  // Execute query with filters
-  const courses =
-    conditions.length > 0
-      ? await db
-        .select({
-          id: coursesTable.id,
-          title: coursesTable.title,
-          slug: coursesTable.slug,
-          description: coursesTable.description,
-          thumbnail: coursesTable.thumbnail,
-          level: coursesTable.level,
-          price: coursesTable.price,
-          categoryId: coursesTable.categoryId,
-          category: categoriesTable.title,
-        })
-        .from(coursesTable)
-        .leftJoin(
-          categoriesTable,
-          eq(coursesTable.categoryId, categoriesTable.id)
-        )
-        .where(and(...conditions))
-      : await db
-        .select({
-          id: coursesTable.id,
-          title: coursesTable.title,
-          slug: coursesTable.slug,
-          description: coursesTable.description,
-          thumbnail: coursesTable.thumbnail,
-          level: coursesTable.level,
-          price: coursesTable.price,
-          categoryId: coursesTable.categoryId,
-          category: categoriesTable.title,
-        })
-        .from(coursesTable)
-        .leftJoin(
-          categoriesTable,
-          eq(coursesTable.categoryId, categoriesTable.id)
-        );
+  const coursesQuery = db
+    .select({
+      id: coursesTable.id,
+      title: coursesTable.title,
+      slug: coursesTable.slug,
+      description: coursesTable.description,
+      thumbnail: coursesTable.thumbnail,
+      level: coursesTable.level,
+      price: coursesTable.price,
+      categoryId: coursesTable.categoryId,
+      category: categoriesTable.title,
+    })
+    .from(coursesTable)
+    .leftJoin(
+      categoriesTable,
+      eq(coursesTable.categoryId, categoriesTable.id)
+    );
+
+  const countQuery = db
+    .select({ count: sql<number>`count(${coursesTable.id})`.mapWith(Number) })
+    .from(coursesTable);
+
+  if (conditions.length > 0) {
+    const whereCondition = and(...conditions);
+    coursesQuery.where(whereCondition);
+    countQuery.where(whereCondition);
+  }
+
+  coursesQuery.limit(pageSize).offset(offset);
+
+  const [courses, [totalResult]] = await Promise.all([
+    coursesQuery,
+    countQuery,
+  ]);
+
+  const totalCourses = totalResult?.count || 0;
+  const totalPages = Math.ceil(totalCourses / pageSize);
 
   const hasFilters = search || categories || level;
+
+  const createPageUrl = (pageNumber: number) => {
+    const params = new URLSearchParams();
+    if (search) params.set("search", search);
+    if (categories) params.set("categories", categories);
+    if (level) params.set("level", level);
+    params.set("page", pageNumber.toString());
+    return `/courses?${params.toString()}`;
+  };
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
@@ -175,7 +188,7 @@ export default async function CoursesPage({
               designed to propel your career forward.
               {hasFilters && (
                 <span className="ml-1 font-medium text-primary">
-                  ({courses.length} courses found)
+                  ({totalCourses} courses found)
                 </span>
               )}
             </p>
@@ -199,59 +212,66 @@ export default async function CoursesPage({
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-              {courses.map((course) => (
-                <Card
-                  key={course.id}
-                  className="group flex flex-col overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1"
-                >
-                  <div className="relative w-full aspect-video overflow-hidden bg-muted">
-                    {course.thumbnail && (
-                      <div
-                        className="w-full h-full bg-center bg-no-repeat bg-cover transition-transform duration-300 group-hover:scale-105"
-                        style={{
-                          backgroundImage: `url("${course.thumbnail}")`,
-                        }}
-                      ></div>
-                    )}
-                  </div>
-                  <div className="p-5 flex flex-col flex-grow">
-                    <h3 className="text-lg font-semibold flex-grow mb-2 leading-tight">
-                      {course.title}
-                    </h3>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-                      <div className="flex items-center gap-1.5">
-                        <Signal className="h-4 w-4" />
-                        <span className="capitalize">{course.level}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <BookOpen className="h-4 w-4" />
-                        <span>{course.category}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between mb-4">
-                      {course.price && course.price > 0 ? (
-                        <span className="text-lg font-bold text-primary">
-                          ${course.price}
-                        </span>
-                      ) : (
-                        <span className="text-lg font-bold text-primary">
-                          Free
-                        </span>
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                {courses.map((course) => (
+                  <Card
+                    key={course.id}
+                    className="group flex flex-col overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1"
+                  >
+                    <div className="relative w-full aspect-video overflow-hidden bg-muted">
+                      {course.thumbnail && (
+                        <div
+                          className="w-full h-full bg-center bg-no-repeat bg-cover transition-transform duration-300 group-hover:scale-105"
+                          style={{
+                            backgroundImage: `url("${course.thumbnail}")`,
+                          }}
+                        ></div>
                       )}
                     </div>
-                    <Link
-                      href={`/courses/details/${course.id}/${course.slug}`}
-                      className="w-full"
-                    >
-                      <Button className="w-full font-semibold">
-                        Start Learning
-                      </Button>
-                    </Link>
-                  </div>
-                </Card>
-              ))}
-            </div>
+                    <div className="p-5 flex flex-col flex-grow">
+                      <h3 className="text-lg font-semibold flex-grow mb-2 leading-tight">
+                        {course.title}
+                      </h3>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+                        <div className="flex items-center gap-1.5">
+                          <Signal className="h-4 w-4" />
+                          <span className="capitalize">{course.level}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <BookOpen className="h-4 w-4" />
+                          <span>{course.category}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between mb-4">
+                        {course.price && course.price > 0 ? (
+                          <span className="text-lg font-bold text-primary">
+                            ${course.price}
+                          </span>
+                        ) : (
+                          <span className="text-lg font-bold text-primary">
+                            Free
+                          </span>
+                        )}
+                      </div>
+                      <Link
+                        href={`/courses/details/${course.id}/${course.slug}`}
+                        className="w-full"
+                      >
+                        <Button className="w-full font-semibold">
+                          Start Learning
+                        </Button>
+                      </Link>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+              <PaginationControl
+                currentPage={currentPage}
+                totalPages={totalPages}
+                createPageUrl={createPageUrl}
+              />
+            </>
           )}
         </div>
       </div>
