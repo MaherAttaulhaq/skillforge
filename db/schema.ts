@@ -1,6 +1,8 @@
 import { sqliteTable, integer, text, primaryKey, real } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 import { AdapterAccount } from "next-auth/adapters";
+import { relations } from "drizzle-orm";
+
 
 
 /* ---------------- USERS ---------------- */
@@ -45,6 +47,33 @@ export const courses = sqliteTable("courses", {
   price: real("price").default(0),
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
+
+export const users_courses = sqliteTable("users_courses", {
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  courseId: integer("course_id")
+    .notNull()
+    .references(() => courses.id, { onDelete: "cascade" }),
+  completedAt: integer("completed_at", { mode: "timestamp" }),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.userId, t.courseId] }),
+}));
+
+export const coursesRelations = relations(courses, ({ many }) => ({
+  users: many(users_courses),
+}));
+
+export const usersCoursesRelations = relations(users_courses, ({ one }) => ({
+  user: one(users, {
+    fields: [users_courses.userId],
+    references: [users.id],
+  }),
+  course: one(courses, {
+    fields: [users_courses.courseId],
+    references: [courses.id],
+  }),
+}));
 
 /* ---------------- POSTS ---------------- */
 export const posts = sqliteTable("posts", {

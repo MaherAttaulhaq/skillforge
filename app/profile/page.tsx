@@ -15,17 +15,82 @@ import { Verified, Award, FileText, GraduationCap } from "lucide-react";
 // import { useRef } from "react";
 import Link from "next/link";
 import { db } from "@/db";
-import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import {
+  users,
+  posts,
+  comments,
+  tags,
+  posts_tags,
+  courses,
+  users_courses,
+} from "@/db/schema";
+import { eq, sql, desc, and } from "drizzle-orm";
 
-async function getUser() {
-  const userId = 1; // Hardcoded user ID
-  const user = await db.select().from(users).where(eq(users.id, userId)).get();
-  return user;
+async function getProfileData(userId?: number) {
+  const user = await db.query.users.findFirst({
+    where: userId ? eq(users.id, userId) : undefined,
+  });
+
+  if (!user) return null;
+
+  const [postCount] = await db
+    .select({ count: sql<number>`count(*)`.mapWith(Number) })
+    .from(posts)
+    .where(eq(posts.authorId, user.id));
+
+  const [commentCount] = await db
+    .select({ count: sql<number>`count(*)`.mapWith(Number) })
+    .from(comments)
+    .where(eq(comments.authorId, user.id));
+
+  const userSkills = await db
+    .select({ name: tags.name })
+    .from(tags)
+    .innerJoin(posts_tags, eq(tags.id, posts_tags.tagId))
+    .innerJoin(posts, eq(posts_tags.postId, posts.id))
+    .where(eq(posts.authorId, user.id))
+    .groupBy(tags.name)
+    .orderBy(desc(sql`count(*)`))
+    .limit(10);
+
+  const completedCourses = await db
+    .select({
+      title: courses.title,
+      completedAt: users_courses.completedAt,
+    })
+    .from(courses)
+    .innerJoin(users_courses, eq(courses.id, users_courses.courseId))
+    .where(eq(users_courses.userId, user.id))
+    .orderBy(desc(users_courses.completedAt));
+
+  // Calculate a dynamic ATS score based on profile activity
+  const atsScore = Math.min(
+    100,
+    userSkills.length * 10 + completedCourses.length * 15 + (postCount?.count || 0) * 2
+  );
+
+  return {
+    user,
+    stats: {
+      posts: postCount?.count || 0,
+      comments: commentCount?.count || 0,
+      courses: completedCourses.length,
+      atsScore,
+    },
+    skills: userSkills.map((s) => s.name),
+    courses: completedCourses,
+  };
 }
 
-export default async function ProfilePage() {
-  const user = await getUser();
+export default async function ProfilePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ id?: string }>;
+}) {
+  const { id } = await searchParams;
+  const data = await getProfileData(id ? parseInt(id) : undefined);
+  const { user, stats, skills, courses } = data || {};
+
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mx-auto max-w-7xl">
@@ -50,9 +115,11 @@ export default async function ProfilePage() {
                     </div>
                   </div>
                   <div className="flex flex-col">
-                    <p className="text-xl font-bold tracking-tight">{user?.name}</p>
+                    <p className="text-xl font-bold tracking-tight">
+                      {user?.name}
+                    </p>
                     <p className="text-sm text-muted-foreground">
-                      Senior Software Engineer
+                      {user?.role}
                     </p>
                   </div>
                   <Link href="/profile/edit" className="w-full">
@@ -68,14 +135,7 @@ export default async function ProfilePage() {
                 </CardHeader>
                 <CardContent className="p-6 pt-2">
                   <div className="flex flex-wrap gap-2">
-                    {[
-                      "JavaScript",
-                      "React",
-                      "Node.js",
-                      "TypeScript",
-                      "Tailwind CSS",
-                      "SQL",
-                    ].map((skill) => (
+                    {skills?.map((skill) => (
                       <Badge
                         key={skill}
                         variant="secondary"
@@ -84,17 +144,6 @@ export default async function ProfilePage() {
                         {skill}
                       </Badge>
                     ))}
-                    {["Project Management", "Agile Methodologies"].map(
-                      (skill) => (
-                        <Badge
-                          key={skill}
-                          variant="secondary"
-                          className="bg-accent/10 text-accent hover:bg-accent/20"
-                        >
-                          {skill}
-                        </Badge>
-                      )
-                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -139,7 +188,7 @@ export default async function ProfilePage() {
                           ></circle>
                         </svg>
                         <p className="absolute text-2xl font-bold text-accent">
-                          88%
+                          {stats?.atsScore || 0}%
                         </p>
                       </div>
                     </CardContent>
@@ -148,11 +197,13 @@ export default async function ProfilePage() {
                     <CardContent className="p-6 flex flex-col gap-2">
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-medium text-muted-foreground">
-                          Resumes Analyzed
+                          Community Posts
                         </p>
                         <FileText className="h-5 w-5 text-muted-foreground" />
                       </div>
-                      <p className="text-4xl font-bold tracking-tight">12</p>
+                      <p className="text-4xl font-bold tracking-tight">
+                        {stats?.posts || 0}
+                      </p>
                     </CardContent>
                   </Card>
                   <Card className="shadow-sm">
@@ -163,18 +214,22 @@ export default async function ProfilePage() {
                         </p>
                         <GraduationCap className="h-5 w-5 text-muted-foreground" />
                       </div>
-                      <p className="text-4xl font-bold tracking-tight">7</p>
+                      <p className="text-4xl font-bold tracking-tight">
+                        {stats?.courses || 0}
+                      </p>
                     </CardContent>
                   </Card>
                   <Card className="shadow-sm">
                     <CardContent className="p-6 flex flex-col gap-2">
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-medium text-muted-foreground">
-                          Skill Badges Earned
+                          Community Comments
                         </p>
                         <Award className="h-5 w-5 text-muted-foreground" />
                       </div>
-                      <p className="text-4xl font-bold tracking-tight">15</p>
+                      <p className="text-4xl font-bold tracking-tight">
+                        {stats?.comments || 0}
+                      </p>
                     </CardContent>
                   </Card>
                 </div>
@@ -201,30 +256,15 @@ export default async function ProfilePage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {[
-                        {
-                          title: "Advanced React Patterns",
-                          date: "2023-11-15",
-                        },
-                        {
-                          title: "TypeScript for Professionals",
-                          date: "2023-09-02",
-                        },
-                        {
-                          title: "Modern CSS with Tailwind",
-                          date: "2023-07-21",
-                        },
-                        {
-                          title: "Data Structures & Algorithms",
-                          date: "2023-05-10",
-                        },
-                      ].map((course, index) => (
+                      {courses?.map((course, index) => (
                         <TableRow key={index}>
                           <TableCell className="px-6 py-4 font-medium">
                             {course.title}
                           </TableCell>
                           <TableCell className="px-6 py-4 text-muted-foreground">
-                            {course.date}
+                            {course.completedAt
+                              ? new Date(course.completedAt).toLocaleDateString()
+                              : "N/A"}
                           </TableCell>
                           <TableCell className="px-6 py-4 text-right">
                             <Button
