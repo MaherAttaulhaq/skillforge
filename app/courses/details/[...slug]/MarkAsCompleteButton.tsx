@@ -10,7 +10,7 @@ interface MarkAsCompleteButtonProps {
   isCompleted: boolean;
   courseId: number;
   courseSlug: string;
-  user: any;
+  user: string | null;
 }
 
 export function MarkAsCompleteButton({

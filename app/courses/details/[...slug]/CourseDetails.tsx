@@ -25,9 +25,10 @@ export default function CourseDetails({
   params: params;
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
-  const [course, setCourse] = useState<any>(null);
-  const [modulesWithLessons, setModulesWithLessons] = useState<any[]>([]);
-  const [userProgress, setUserProgress] = useState<any[]>([]);
+  const [course, setCourse] = useState<string | null>(null);
+  const [modulesWithLessons, setModulesWithLessons] = useState<string[]>([]);
+
+  const [userProgress, setUserProgress] = useState<string[]>([]);
   const [relatedCourses, setRelatedCourses] = useState<any[]>([]);
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -37,8 +38,12 @@ export default function CourseDetails({
       const { slug } = params;
       const id = slug && slug[0];
 
+      if (!id) return;
+
       const res = await fetch(`/api/courses/${id}`);
       const data = await res.json();
+      console.log(data);
+
 
       setCourse(data.course);
       setModulesWithLessons(data.modulesWithLessons);
@@ -203,11 +208,10 @@ export default function CourseDetails({
                           return (
                             <li
                               key={lesson.id}
-                              className={`flex items-center justify-between p-3 rounded-md transition-colors ${
-                                currentLesson?.id === lesson.id
-                                  ? "bg-primary/10 text-primary"
-                                  : "hover:bg-muted/50"
-                              }`}
+                              className={`flex items-center justify-between p-3 rounded-md transition-colors ${currentLesson?.id === lesson.id
+                                ? "bg-primary/10 text-primary"
+                                : "hover:bg-muted/50"
+                                }`}
                             >
                               <Link
                                 href={`/courses/details/${course.id}/${course.slug}?lesson=${lesson.id}`}
@@ -217,11 +221,10 @@ export default function CourseDetails({
                                 <span>{lesson.title}</span>
                               </Link>
                               <CheckCircle
-                                className={`h-5 w-5 ${
-                                  isCompleted
-                                    ? "text-green-500"
-                                    : "text-muted-foreground"
-                                }`}
+                                className={`h-5 w-5 ${isCompleted
+                                  ? "text-green-500"
+                                  : "text-muted-foreground"
+                                  }`}
                               />
                             </li>
                           );

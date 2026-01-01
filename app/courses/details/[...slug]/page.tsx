@@ -12,6 +12,8 @@ export default async function CourseDetailPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const awaitedParams = await params;
+
+  
   const awaitedSearchParams = await searchParams;
 
   return (

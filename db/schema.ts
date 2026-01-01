@@ -20,6 +20,20 @@ export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type UserRole = "student" | "instructor" | "admin";
 
+/* ---------------- INSTRUCTORS ---------------- */
+export const instructors = sqliteTable("instructors", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id")
+    .references(() => users.id)
+    .notNull()
+    .unique(),
+  bio: text("bio"),
+  expertise: text("expertise"),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+export type Instructor = typeof instructors.$inferSelect;
+export type NewInstructor = typeof instructors.$inferInsert;
 
 /* ---------------- CATEGORIES ---------------- */
 export const categories = sqliteTable("categories", {

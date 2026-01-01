@@ -16,7 +16,6 @@ import { Verified, Award, FileText, GraduationCap } from "lucide-react";
 import Link from "next/link";
 import { db } from "@/db";
 import {
-  users,
   posts,
   comments,
   tags,
@@ -24,15 +23,14 @@ import {
   courses,
   users_courses,
 } from "@/db/schema";
-import { eq, sql, desc, and } from "drizzle-orm";
+import { eq, sql, desc } from "drizzle-orm";
+import { auth } from "@/auth";
 
-async function getProfileData(userId?: number) {
-  const user = await db.query.users.findFirst({
-    where: userId ? eq(users.id, userId) : undefined,
-  });
-
-  if (!user) return null;
-
+async function getProfileData() {
+  const session = await auth()
+  if (!session?.user) return null;
+  const user = session.user;
+  console.log("Fetched user:", user);
   const [postCount] = await db
     .select({ count: sql<number>`count(*)`.mapWith(Number) })
     .from(posts)
@@ -82,13 +80,8 @@ async function getProfileData(userId?: number) {
   };
 }
 
-export default async function ProfilePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ id?: string }>;
-}) {
-  const { id } = await searchParams;
-  const data = await getProfileData(id ? parseInt(id) : undefined);
+export default async function ProfilePage() {
+  const data = await getProfileData();
   const { user, stats, skills, courses } = data || {};
 
   return (
@@ -116,10 +109,10 @@ export default async function ProfilePage({
                   </div>
                   <div className="flex flex-col">
                     <p className="text-xl font-bold tracking-tight">
-                      {user?.name}
+                      {user?.name ?? "Guest User"}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {user?.role}
+                      {user?.role ?? "Student"}
                     </p>
                   </div>
                   <Link href="/profile/edit" className="w-full">

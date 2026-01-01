@@ -15,7 +15,7 @@ export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const id = params.id;
+  const { id } = await params;
   const session = await getSession();
   const user = session?.user;
 
@@ -37,6 +37,7 @@ export async function GET(
     .leftJoin(usersTable, eq(coursesTable.instructorId, usersTable.id))
     .where(eq(coursesTable.id, Number(id)))
     .get();
+  console.log("courses is ", course);
 
   if (!course) {
     return NextResponse.json({ error: "Course not found" }, { status: 404 });

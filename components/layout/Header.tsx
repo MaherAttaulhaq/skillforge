@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { BrainCircuit } from "lucide-react"
 import Link from "next/link"
 import UserMenu from "./user-menu";
+import { NavLink } from "../nav-link";
 
 export default async function Header() {
   const session = await auth();
@@ -13,7 +14,9 @@ export default async function Header() {
       <div className="container mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
         <div className="flex items-center gap-3">
           <BrainCircuit className="h-8 w-8 text-primary" />
-          <h2 className="text-xl font-bold tracking-tight">SkillForge</h2>
+          <NavLink href="/">
+            <h2 className="text-xl font-bold tracking-tight">SkillForge</h2>
+          </NavLink>
         </div>
         <div className="hidden items-center gap-8 md:flex">
           <Link
