@@ -21,21 +21,21 @@ export default async function Header() {
         <div className="hidden items-center gap-8 md:flex">
           <Link
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-            href="/#features"
+            href="/courses"
           >
-            Features
+            Courses
           </Link>
           <Link
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-            href="/#how-it-works"
+            href="/jobs"
           >
-            How it Works
+            Jobs
           </Link>
           <Link
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-            href="/#testimonials"
+            href="/community"
           >
-            Testimonials
+            Community
           </Link>
         </div>
 

@@ -62,6 +62,31 @@ export const courses = sqliteTable("courses", {
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
+export const chapters = sqliteTable("chapters", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  title: text("title").notNull(),
+  description: text("description"),
+  videoUrl: text("video_url"),
+  position: integer("position").notNull(),
+  isPublished: integer("is_published", { mode: "boolean" }).default(false),
+  isFree: integer("is_free", { mode: "boolean" }).default(false),
+  courseId: integer("course_id")
+    .references(() => courses.id, { onDelete: "cascade" })
+    .notNull(),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const purchases = sqliteTable("purchases", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
+  courseId: integer("course_id")
+    .references(() => courses.id, { onDelete: "cascade" })
+    .notNull(),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
 export const users_courses = sqliteTable("users_courses", {
   userId: integer("user_id")
     .notNull()
