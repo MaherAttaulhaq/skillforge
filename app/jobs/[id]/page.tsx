@@ -13,6 +13,7 @@ import Link from "next/link";
 import { db } from "@/db";
 import { jobs } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { auth } from "@/auth";
 
 interface params {
   id?: number;
@@ -24,6 +25,7 @@ export default async function JobDetailPage({
   params: Promise<params>;
 }) {
   const { id } = await params;
+  const session = await auth();
   const job = db
     .select()
     .from(jobs)
@@ -100,11 +102,12 @@ export default async function JobDetailPage({
 
             {/* Primary Action Buttons */}
             <div className="flex flex-col sm:flex-row lg:flex-col gap-3">
-              <Button className="w-full h-12 text-base font-bold gap-2">
+              <Button disabled={!session} className="w-full h-12 text-base font-bold gap-2">
                 <ArrowRight className="h-5 w-5" />
-                Apply Now
+                {session ? "Apply Now" : "Login to Apply"}
               </Button>
               <Button
+                disabled={!session}
                 variant="outline"
                 className="w-full h-12 text-base font-bold gap-2 border-2"
               >
@@ -172,14 +175,14 @@ export default async function JobDetailPage({
                       <p>{job.description}</p>
                     </>
                   )}
-                   <br />
+                  <br />
                   {job?.requirements && (
                     <>
                       <h4>Requirements</h4>
                       <p>{job.requirements}</p>
                     </>
                   )}
-<br />
+                  <br />
                   {job?.benefits && (
                     <>
                       <h4>Benefits</h4>

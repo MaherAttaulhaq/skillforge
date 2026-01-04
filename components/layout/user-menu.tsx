@@ -23,7 +23,10 @@ export default function userMenu({ user }: { user: { name?: string | null; email
                         <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
                     </div>
                 </DropdownMenuLabel>
-                <DropdownMenuItem onClick={async () => await signOut()}>Log out</DropdownMenuItem>
+                <button className="w-full text-left">
+                    <DropdownMenuItem onClick={async () => await signOut()}>Log out</DropdownMenuItem>
+                </button>
+
             </DropdownMenuContent>
         </DropdownMenu>
     )

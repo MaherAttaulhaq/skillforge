@@ -7,6 +7,7 @@ import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import * as bcrypt from "bcryptjs";
 import { authConfig } from "./auth.config";
+import { type Role } from "@/lib/rbac";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -78,7 +79,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.role = token.role as "student" | "instructor" | "admin";
+        session.user.role = token.role as Role;
       }
       return session;
     },
