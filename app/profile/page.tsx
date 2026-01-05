@@ -14,6 +14,7 @@ import {
 import { Verified, Award, FileText, GraduationCap } from "lucide-react";
 // import { useRef } from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { db } from "@/db";
 import {
   posts,
@@ -24,7 +25,7 @@ import {
   users_courses,
 } from "@/db/schema";
 import { eq, sql, desc } from "drizzle-orm";
-import { auth } from "@/auth";
+import { auth, signOut } from "@/auth";
 
 async function getProfileData() {
   const session = await auth()

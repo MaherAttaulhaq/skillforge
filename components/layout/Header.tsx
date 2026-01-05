@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { auth, signOut } from "@/auth";
 import { Button } from "@/components/ui/button"
 import { BrainCircuit } from "lucide-react"
 import Link from "next/link"
@@ -8,6 +8,11 @@ import { NavLink } from "../nav-link";
 export default async function Header() {
   const session = await auth();
   const user = session?.user;
+
+  async function handleSignOut() {
+    "use server"
+    await signOut({ redirectTo: "/register" });
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 dark:border-slate-800/80 bg-background/80 backdrop-blur-sm">
@@ -41,7 +46,7 @@ export default async function Header() {
 
         <div>
           {user ?
-            <UserMenu user={user} />
+            <UserMenu user={user} onSignOut={handleSignOut} />
             :
             <Link href="/register">
               <Button className="font-semibold shadow-sm">

@@ -41,3 +41,15 @@ export async function checkCourseAccess(courseId: string, userId: string) {
 
   return data.length > 0;
 }
+
+export async function getEnrolledCourses(userId: string) {
+  const data = await db
+    .select({
+      course: courses,
+    })
+    .from(courses)
+    .innerJoin(purchases, eq(courses.id, purchases.courseId))
+    .where(eq(purchases.userId, parseInt(userId)));
+
+  return data.map((item) => item.course);
+}

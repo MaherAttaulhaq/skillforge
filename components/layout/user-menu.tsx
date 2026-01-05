@@ -1,11 +1,23 @@
 "use client"
-import { signOut } from "next-auth/react"
-import { Avatar, AvatarImage, AvatarFallback } from '@radix-ui/react-avatar'
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuItem } from '@radix-ui/react-dropdown-menu'
-import React from 'react'
-import { Button } from '../ui/button'
 
-export default function userMenu({ user }: { user: { name?: string | null; email?: string | null; image?: string | null } }) {
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
+import { type User } from "next-auth"
+
+interface UserMenuProps {
+    user: User
+    onSignOut: () => Promise<void>
+}
+
+export default function UserMenu({ user, onSignOut }: UserMenuProps) {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -16,17 +28,19 @@ export default function userMenu({ user }: { user: { name?: string | null; email
                     </Avatar>
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end">
+            <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
                         <p className="text-sm font-medium leading-none">{user.name}</p>
-                        <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                            {user.email}
+                        </p>
                     </div>
                 </DropdownMenuLabel>
-                <button className="w-full text-left">
-                    <DropdownMenuItem onClick={async () => await signOut()}>Log out</DropdownMenuItem>
-                </button>
-
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onSignOut()}>
+                    Log out
+                </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
     )
