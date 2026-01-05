@@ -21,6 +21,7 @@ import { NavLink } from "@/components/nav-link";
 import { PostFilters } from "@/components/PostFilters";
 import { PostInteractions } from "./PostInteractions"
 import { PaginationControl } from "@/components/PaginationControl";
+import { auth } from "@/auth";
 
 type CommunityPageProps = {
   searchParams: {
@@ -39,10 +40,12 @@ export default async function CommunityPage({
   const pageSize = 2;
   const offset = (currentPage - 1) * pageSize;
 
-  const currentUser = await db.query.users.findFirst({
-    where: eq(users.name, "Attaulhaq"),
-  });
-  const currentUserId = currentUser?.id || 1;
+  const session = await auth();
+  const currentUser = session?.user?.email ? await db.query.users.findFirst({
+    where: eq(users.email, session.user.email),
+  }) : null;
+
+  const currentUserId = currentUser?.id;
 
   const allCategories = await db.select().from(categories);
 
@@ -61,7 +64,7 @@ export default async function CommunityPage({
       commentCount: sql<number>`count(distinct ${comments.id})`.mapWith(Number),
       likeCount: sql<number>`count(distinct ${likes.userId})`.mapWith(Number),
       shareCount: sql<number>`count(distinct ${shares.id})`.mapWith(Number),
-      isLiked: sql<number>`max(case when ${likes.userId} = ${currentUserId} then 1 else 0 end)`.mapWith(Boolean),
+      isLiked: sql<number>`max(case when ${likes.userId} = ${currentUserId || -1} then 1 else 0 end)`.mapWith(Boolean),
     })
     .from(postsTable)
     .leftJoin(users, eq(postsTable.authorId, users.id))
@@ -269,12 +272,19 @@ export default async function CommunityPage({
                   Ask questions, share knowledge, and connect with peers.
                 </p>
               </div>
-              <NavLink href="/community/create-post">
-                <Button className="gap-2 shadow-sm transition-transform duration-200 ease-in-out hover:scale-105">
+              {currentUser ? (
+                <NavLink href="/community/create-post">
+                  <Button className="gap-2 shadow-sm transition-transform duration-200 ease-in-out hover:scale-105">
+                    <PlusCircle className="h-4 w-4" />
+                    Create Post
+                  </Button>
+                </NavLink>
+              ) : (
+                <Button disabled className="gap-2 shadow-sm opacity-50 cursor-not-allowed">
                   <PlusCircle className="h-4 w-4" />
                   Create Post
                 </Button>
-              </NavLink>
+              )}
             </div>
 
             <PostFilters categories={allCategories} />
@@ -344,19 +354,21 @@ export default async function CommunityPage({
                         </div>
                       </div>
                     </div>
-                    <PostInteractions
-                      postId={post.id}
-                      initialLikes={post.likes}
-                      initialComments={post.comments}
-                      initialShares={post.shares}
-                      isLiked={post.isLiked}
-                      comments={post.commentsList}
-                      currentUser={{
-                        name: currentUser?.name || "Anonymous",
-                        avatar: currentUser?.avatar || null,
-                      }}
-                      currentUserId={currentUserId}
-                    />
+                    <div className={!currentUser ? "pointer-events-none opacity-60" : ""}>
+                      <PostInteractions
+                        postId={post.id}
+                        initialLikes={post.likes}
+                        initialComments={post.comments}
+                        initialShares={post.shares}
+                        isLiked={post.isLiked}
+                        comments={post.commentsList}
+                        currentUser={{
+                          name: currentUser?.name || "Anonymous",
+                          avatar: currentUser?.avatar || null,
+                        }}
+                        currentUserId={currentUserId || -1}
+                      />
+                    </div>
                   </CardContent>
                 </Card>
               ))}

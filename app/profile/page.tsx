@@ -1,283 +1,251 @@
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
+import { db } from "@/db";
+import { users, courses, users_courses } from "@/db/schema";
+import { eq, sql, desc } from "drizzle-orm";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  PlusCircle,
+  BookOpen,
+  Users,
+  BarChart3,
+  FileText,
+  Video,
+  ClipboardList,
+  MoreVertical
+} from "lucide-react";
+import Link from "next/link";
 import {
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
+  TableRow
 } from "@/components/ui/table";
-// import { submitForm } from "@/app/actions/form";
-import { Verified, Award, FileText, GraduationCap } from "lucide-react";
-// import { useRef } from "react";
-import Link from "next/link";
-import { redirect } from "next/navigation";
-import { db } from "@/db";
 import {
-  posts,
-  comments,
-  tags,
-  posts_tags,
-  courses,
-  users_courses,
-} from "@/db/schema";
-import { eq, sql, desc } from "drizzle-orm";
-import { auth, signOut } from "@/auth";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 
-async function getProfileData() {
-  const session = await auth()
-  if (!session?.user) return null;
-  const user = session.user;
-  console.log("Fetched user:", user);
-  const [postCount] = await db
-    .select({ count: sql<number>`count(*)`.mapWith(Number) })
-    .from(posts)
-    .where(eq(posts.authorId, user.id));
+export default async function InstructorDashboardPage() {
+  const session = await auth();
+  if (!session?.user?.email) redirect("/register");
 
-  const [commentCount] = await db
-    .select({ count: sql<number>`count(*)`.mapWith(Number) })
-    .from(comments)
-    .where(eq(comments.authorId, user.id));
+  const currentUser = await db.query.users.findFirst({
+    where: eq(users.email, session.user.email),
+  });
 
-  const userSkills = await db
-    .select({ name: tags.name })
-    .from(tags)
-    .innerJoin(posts_tags, eq(tags.id, posts_tags.tagId))
-    .innerJoin(posts, eq(posts_tags.postId, posts.id))
-    .where(eq(posts.authorId, user.id))
-    .groupBy(tags.name)
-    .orderBy(desc(sql`count(*)`))
-    .limit(10);
+  if (!currentUser || currentUser.role !== "instructor") {
+    redirect("/profile");
+  }
 
-  const completedCourses = await db
+  // Fetch Instructor's Courses
+  const instructorCourses = await db
     .select({
+      id: courses.id,
       title: courses.title,
-      completedAt: users_courses.completedAt,
+      createdAt: courses.createdAt,
+      // price: courses.price, // Uncomment if price exists in schema
     })
     .from(courses)
-    .innerJoin(users_courses, eq(courses.id, users_courses.courseId))
-    .where(eq(users_courses.userId, user.id))
-    .orderBy(desc(users_courses.completedAt));
+    .where(eq(courses.authorId, currentUser.id))
+    .orderBy(desc(courses.createdAt));
 
-  // Calculate a dynamic ATS score based on profile activity
-  const atsScore = Math.min(
-    100,
-    userSkills.length * 10 + completedCourses.length * 15 + (postCount?.count || 0) * 2
-  );
+  // Calculate Total Students (Enrollments in instructor's courses)
+  const enrollments = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(users_courses)
+    .innerJoin(courses, eq(users_courses.courseId, courses.id))
+    .where(eq(courses.authorId, currentUser.id));
 
-  return {
-    user,
-    stats: {
-      posts: postCount?.count || 0,
-      comments: commentCount?.count || 0,
-      courses: completedCourses.length,
-      atsScore,
-    },
-    skills: userSkills.map((s) => s.name),
-    courses: completedCourses,
-  };
-}
-
-export default async function ProfilePage() {
-  const data = await getProfileData();
-  const { user, stats, skills, courses } = data || {};
+  const totalStudents = enrollments[0]?.count || 0;
+  const totalCourses = instructorCourses.length;
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">My Profile</h1>
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Instructor Dashboard</h1>
+          <p className="text-muted-foreground">Manage your courses, content, and students.</p>
         </div>
-        <div className="grid grid-cols-12 gap-6">
-          <div className="col-span-12 lg:col-span-4 xl:col-span-3">
-            <div className="flex flex-col gap-6">
-              <Card className="shadow-sm">
-                <CardContent className="p-6 flex flex-col items-center text-center gap-4">
-                  <div className="relative">
-                    <Avatar className="h-24 w-24 ring-4 ring-primary/20">
-                      <AvatarImage
-                        src={user?.avatar ?? "https://github.com/shadcn.png"}
-                        alt={user?.name ?? "User"}
-                      />
-                      <AvatarFallback>{user?.name?.[0] ?? "U"}</AvatarFallback>
-                    </Avatar>
-                    <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border-4 border-card bg-accent text-white">
-                      <Verified className="h-4 w-4" />
-                    </div>
-                  </div>
-                  <div className="flex flex-col">
-                    <p className="text-xl font-bold tracking-tight">
-                      {user?.name ?? "Guest User"}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {user?.role ?? "Student"}
-                    </p>
-                  </div>
-                  <Link href="/profile/edit" className="w-full">
-                    <Button className="w-full">Edit Profile</Button>
-                  </Link>
-                </CardContent>
-              </Card>
-              <Card className="shadow-sm">
-                <CardHeader className="p-6 pb-2">
-                  <CardTitle className="text-lg font-semibold tracking-tight">
-                    My Skills
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-6 pt-2">
-                  <div className="flex flex-wrap gap-2">
-                    {skills?.map((skill) => (
-                      <Badge
-                        key={skill}
-                        variant="secondary"
-                        className="bg-primary/10 text-primary hover:bg-primary/20"
-                      >
-                        {skill}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-          <div className="col-span-12 lg:col-span-8 xl:col-span-9">
-            <div className="flex flex-col gap-6">
-              <div>
-                <h2 className="text-xl font-semibold tracking-tight mb-4">
-                  Dashboard Statistics
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-                  <Card className="shadow-sm">
-                    <CardContent className="p-6 flex flex-col gap-4">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-muted-foreground">
-                          Overall ATS Score
-                        </p>
-                        <Award className="h-5 w-5 text-accent" />
-                      </div>
-                      <div className="relative h-24 w-24 mx-auto flex items-center justify-center">
-                        <svg className="h-full w-full" viewBox="0 0 36 36">
-                          <circle
-                            className="stroke-current text-muted/20"
-                            cx="18"
-                            cy="18"
-                            fill="none"
-                            r="16"
-                            strokeWidth="3"
-                          ></circle>
-                          <circle
-                            className="stroke-current text-accent transition-all duration-500"
-                            cx="18"
-                            cy="18"
-                            fill="none"
-                            r="16"
-                            strokeDasharray="100"
-                            strokeDashoffset="12"
-                            strokeLinecap="round"
-                            strokeWidth="3"
-                            transform="rotate(-90 18 18)"
-                          ></circle>
-                        </svg>
-                        <p className="absolute text-2xl font-bold text-accent">
-                          {stats?.atsScore || 0}%
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card className="shadow-sm">
-                    <CardContent className="p-6 flex flex-col gap-2">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-muted-foreground">
-                          Community Posts
-                        </p>
-                        <FileText className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                      <p className="text-4xl font-bold tracking-tight">
-                        {stats?.posts || 0}
-                      </p>
-                    </CardContent>
-                  </Card>
-                  <Card className="shadow-sm">
-                    <CardContent className="p-6 flex flex-col gap-2">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-muted-foreground">
-                          Courses Completed
-                        </p>
-                        <GraduationCap className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                      <p className="text-4xl font-bold tracking-tight">
-                        {stats?.courses || 0}
-                      </p>
-                    </CardContent>
-                  </Card>
-                  <Card className="shadow-sm">
-                    <CardContent className="p-6 flex flex-col gap-2">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-muted-foreground">
-                          Community Comments
-                        </p>
-                        <Award className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                      <p className="text-4xl font-bold tracking-tight">
-                        {stats?.comments || 0}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-              <Card className="shadow-sm">
-                <CardHeader className="p-6 border-b">
-                  <CardTitle className="text-lg font-semibold tracking-tight">
-                    Completed Courses & Badges
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="px-6 py-3">
-                          Course Title
-                        </TableHead>
-                        <TableHead className="px-6 py-3">
-                          Completion Date
-                        </TableHead>
-                        <TableHead className="px-6 py-3 text-right">
-                          Certificate
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {courses?.map((course, index) => (
-                        <TableRow key={index}>
-                          <TableCell className="px-6 py-4 font-medium">
-                            {course.title}
-                          </TableCell>
-                          <TableCell className="px-6 py-4 text-muted-foreground">
-                            {course.completedAt
-                              ? new Date(course.completedAt).toLocaleDateString()
-                              : "N/A"}
-                          </TableCell>
-                          <TableCell className="px-6 py-4 text-right">
-                            <Button
-                              variant="link"
-                              className="text-primary font-medium p-0 h-auto"
-                            >
-                              View
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
+        <Link href="/instructor/create-course">
+          <Button className="gap-2">
+            <PlusCircle className="h-4 w-4" />
+            Create New Course
+          </Button>
+        </Link>
       </div>
+
+      {/* Overview Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Courses</CardTitle>
+            <BookOpen className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalCourses}</div>
+            <p className="text-xs text-muted-foreground">Active courses</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalStudents}</div>
+            <p className="text-xs text-muted-foreground">Across all courses</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Average Rating</CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">4.8</div>
+            <p className="text-xs text-muted-foreground">Student feedback</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Content Tabs */}
+      <Tabs defaultValue="courses" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 h-auto">
+          <TabsTrigger value="courses" className="py-2">Courses</TabsTrigger>
+          <TabsTrigger value="content" className="py-2">Content</TabsTrigger>
+          <TabsTrigger value="quizzes" className="py-2">Quizzes</TabsTrigger>
+          <TabsTrigger value="assignments" className="py-2">Assignments</TabsTrigger>
+          <TabsTrigger value="analytics" className="py-2">Analytics</TabsTrigger>
+        </TabsList>
+
+        {/* Courses Tab */}
+        <TabsContent value="courses" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>My Courses</CardTitle>
+              <CardDescription>
+                Manage your existing courses and create new ones.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {instructorCourses.length > 0 ? (
+                    instructorCourses.map((course) => (
+                      <TableRow key={course.id}>
+                        <TableCell className="font-medium">{course.title}</TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">Published</Badge>
+                        </TableCell>
+                        <TableCell>{course.createdAt ? new Date(course.createdAt).toLocaleDateString() : "N/A"}</TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem>
+                                <Link href={`/instructor/course/${course.id}/builder`} className="flex w-full">
+                                  Course Builder
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>Edit Details</DropdownMenuItem>
+                              <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                        No courses found. Create your first course!
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Content Tab */}
+        <TabsContent value="content" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Content Library</CardTitle>
+              <CardDescription>Manage videos, documents, and other resources.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+              <Video className="h-12 w-12 mb-4 opacity-20" />
+              <p>Select a course to manage its specific content.</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Quizzes Tab */}
+        <TabsContent value="quizzes" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Quiz Manager</CardTitle>
+              <CardDescription>Create and manage quizzes for your courses.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+              <ClipboardList className="h-12 w-12 mb-4 opacity-20" />
+              <p>No quizzes created yet.</p>
+              <Button variant="outline" className="mt-4">Create Quiz</Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Assignments Tab */}
+        <TabsContent value="assignments" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Assignments</CardTitle>
+              <CardDescription>Review and grade student submissions.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+              <FileText className="h-12 w-12 mb-4 opacity-20" />
+              <p>No pending assignments to review.</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Analytics Tab */}
+        <TabsContent value="analytics" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Student Analytics</CardTitle>
+              <CardDescription>Detailed insights into student performance.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+              <BarChart3 className="h-12 w-12 mb-4 opacity-20" />
+              <p>Analytics dashboard coming soon.</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

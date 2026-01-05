@@ -13,14 +13,17 @@ import {
 } from "@/db/schema";
 import { eq, desc, sql } from "drizzle-orm";
 import Link from "next/link";
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 
 export default async function DashboardPage() {
-  // Fetch user data (using first user for demo - in real app, use session)
+  const session = await auth();
+  if (!session?.user?.email) redirect("/register");
+
   const currentUser = await db
     .select()
     .from(users)
-    .where(eq(users.role, "student"))
-    .limit(1)
+    .where(eq(users.email, session.user.email))
     .get();
 
   // Fetch user skills
