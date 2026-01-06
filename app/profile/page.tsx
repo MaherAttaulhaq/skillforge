@@ -98,57 +98,7 @@ export default async function ProfilePage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-5xl">
       {/* Profile Header */}
-      <div className="flex flex-col md:flex-row gap-8 items-start mb-8">
-        <Avatar className="h-32 w-32 border-4 border-background shadow-xl">
-          <AvatarImage src={user.image || ""} alt={user.name || ""} />
-          <AvatarFallback className="text-4xl">{user.name?.charAt(0)}</AvatarFallback>
-        </Avatar>
-        <div className="flex-1 space-y-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">{user.name}</h1>
-            <p className="text-muted-foreground">{user.role || "Student"}</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {skills.map((skill, i) => (
-              <Badge key={i} variant="secondary">
-                {skill}
-              </Badge>
-            ))}
-          </div>
-          <div className="flex gap-4 pt-2">
-            <Button>Edit Profile</Button>
-            <Button variant="outline">Share Profile</Button>
-          </div>
-        </div>
 
-        {/* {/* Stats Cards
-        <div className="grid grid-cols-2 gap-4 w-full md:w-auto">
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold">{stats.courses}</div>
-              <div className="text-xs text-muted-foreground">Courses</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold">{stats.atsScore}</div>
-              <div className="text-xs text-muted-foreground">ATS Score</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold">{stats.posts}</div>
-              <div className="text-xs text-muted-foreground">Posts</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold">{stats.comments}</div>
-              <div className="text-xs text-muted-foreground">Comments</div>
-            </CardContent>
-          </Card>
-        </div>
-      </div> 
 
       {user.role === "instructor" ? (
         <InstructorProfilePage courses={courses.created} />
@@ -307,5 +257,4 @@ export default async function ProfilePage() {
       )}
     </div>
   );
-} */}
-)
+}
