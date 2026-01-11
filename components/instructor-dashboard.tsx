@@ -5,383 +5,376 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import {
-    MapPin,
-    Globe,
-    Twitter,
-    Github,
-    Star,
-    Users,
-    Video,
-    MessageSquare,
-    Clock,
-    User,
-    Edit,
+  MapPin,
+  Globe,
+  Twitter,
+  Github,
+  Star,
+  Users,
+  Video,
+  MessageSquare,
+  Clock,
+  User,
+  Edit,
 } from "lucide-react";
+import { NavLink } from "@/components/nav-link";
+import { db } from "@/db";
+import { courses, reviews, enrollments, users } from "@/db/schema";
+import { eq, inArray } from "drizzle-orm";
+import { PaginationControl } from "@/components/PaginationControl";
 
-export default function InstructorProfilePage({ courses }: { courses: any[] }) {
-    return (
-        <div className="container mx-auto px-4 py-8">
-            <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                        Instructor Profile
-                    </h1>
-                    <p className="mt-1 text-muted-foreground">
-                        Manage your public presence and view your impact.
-                    </p>
-                </div>
-                <Button>
-                    <Edit className="mr-2 h-4 w-4" />
-                    Edit Profile
-                </Button>
-            </div>
+export default async function InstructorProfilePage({ user, searchParams }: { user?: any, searchParams?: any }) {
+  const coursesData = await db.select().from(courses).where(eq(courses.instructorId, user.id));
+  const courseIds = coursesData.map((c) => c.id);
 
-            <div className="grid grid-cols-12 gap-6">
-                {/* Left Column: Profile Info */}
-                <div className="col-span-12 lg:col-span-4 xl:col-span-3">
-                    <div className="flex flex-col gap-6">
-                        <Card>
-                            <CardContent className="pt-6">
-                                <div className="flex flex-col items-center gap-4 text-center">
-                                    <Avatar className="h-32 w-32 ring-4 ring-primary/20">
-                                        <AvatarImage
-                                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAcHjvgw2NcP45qzQ6xCiLfeenAjTV8z9Up-rzqlLQCqzBFRjZ9oPwo-poABdkIWN7fw0BOEq3pOtPedIoLfDTqjbm2wD4GZV1tKCRf-n1bQqdIZWF55uzhPIqNrpDEOCrGgtHpocTnIwoke6FLjHpXZoP0B6Oi9GYpiux5SQveI7Z0AonUD7AZ_JXmeHLlbIl-dd5dBNkTn53EuwASxSI8ZNE885WQaK717FQilicr_p4geNcBJbsewH05E_fe3NsrdhcQzTTzLgM"
-                                            alt="Sarah Jenkins"
-                                        />
-                                        <AvatarFallback>SJ</AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex flex-col">
-                                        <h2 className="text-2xl font-bold">Sarah Jenkins</h2>
-                                        <p className="mt-1 text-sm font-medium text-primary">
-                                            Senior Technical Instructor
-                                        </p>
-                                        <p className="mt-2 flex items-center justify-center gap-1 text-xs text-muted-foreground">
-                                            <MapPin className="h-4 w-4" /> San Francisco, CA
-                                        </p>
-                                    </div>
-                                    <Separator className="my-2" />
-                                    <div className="flex justify-center gap-4">
-                                        <a
-                                            href="#"
-                                            className="text-muted-foreground hover:text-primary transition-colors"
-                                        >
-                                            <Globe className="h-5 w-5" />
-                                        </a>
-                                        <a
-                                            href="#"
-                                            className="text-muted-foreground hover:text-primary transition-colors"
-                                        >
-                                            <Twitter className="h-5 w-5" />
-                                        </a>
-                                        <a
-                                            href="#"
-                                            className="text-muted-foreground hover:text-primary transition-colors"
-                                        >
-                                            <Github className="h-5 w-5" />
-                                        </a>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+  let reviewsData: any[] = [];
+  let enrollmentsData: any[] = [];
 
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-lg font-semibold">About Me</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-sm leading-relaxed text-muted-foreground">
-                                    Passionate educator with over 10 years of experience in Full
-                                    Stack Development and Cloud Architecture. I love breaking down
-                                    complex technical concepts into digestible, hands-on lessons. My
-                                    mission is to help students bridge the gap between theory and
-                                    real-world application.
-                                </p>
-                            </CardContent>
-                        </Card>
-                    </div>
-                </div>
+  if (courseIds.length > 0) {
+    reviewsData = await db
+      .select({
+        id: reviews.id,
+        rating: reviews.rating,
+        comment: reviews.comment,
+        courseId: reviews.courseId,
+        createdAt: reviews.createdAt,
+        user: users,
+      })
+      .from(reviews)
+      .leftJoin(users, eq(reviews.userId, users.id))
+      .where(inArray(reviews.courseId, courseIds));
 
-                {/* Right Column: Content */}
-                <div className="col-span-12 lg:col-span-8 xl:col-span-9">
-                    <div className="flex flex-col gap-6">
-                        <div>
-                            <h2 className="mb-4 text-xl font-semibold text-foreground">
-                                Teaching Impact
-                            </h2>
-                            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
-                                {/* Stats Card 1 */}
-                                <Card className="hover:shadow-md transition-shadow">
-                                    <CardContent className="p-6">
-                                        <div className="flex items-center justify-between space-y-0 pb-2">
-                                            <p className="text-sm font-medium text-muted-foreground">
-                                                Avg. Course Rating
-                                            </p>
-                                            <Star className="h-5 w-5 text-accent-foreground" />
-                                        </div>
-                                        <div className="flex items-baseline gap-2 pt-2">
-                                            <span className="text-3xl font-bold">4.9</span>
-                                            <span className="text-sm text-muted-foreground">
-                                                / 5.0
-                                            </span>
-                                        </div>
-                                        <Progress value={98} className="mt-4 h-1.5" />
-                                    </CardContent>
-                                </Card>
+    enrollmentsData = await db
+      .select()
+      .from(enrollments)
+      .where(inArray(enrollments.courseId, courseIds));
+  }
 
-                                {/* Stats Card 2 */}
-                                <Card className="hover:shadow-md transition-shadow">
-                                    <CardContent className="flex flex-col p-6 h-full">
-                                        <div className="flex items-center justify-between pb-2">
-                                            <p className="text-sm font-medium text-muted-foreground">
-                                                Total Students
-                                            </p>
-                                            <Users className="h-5 w-5 text-primary" />
-                                        </div>
-                                        <p className="text-3xl font-bold">12,450</p>
-                                        <p className="mt-auto text-xs text-muted-foreground">
-                                            +850 this month
-                                        </p>
-                                    </CardContent>
-                                </Card>
+  const instructorCourses = coursesData.map((course) => ({
+    ...course,
+    reviews: reviewsData.filter((r) => r.courseId === course.id),
+    enrollments: enrollmentsData.filter((e) => e.courseId === course.id),
+  }));
 
-                                {/* Stats Card 3 */}
-                                <Card className="hover:shadow-md transition-shadow">
-                                    <CardContent className="flex flex-col p-6 h-full">
-                                        <div className="flex items-center justify-between pb-2">
-                                            <p className="text-sm font-medium text-muted-foreground">
-                                                Courses Taught
-                                            </p>
-                                            <Video className="h-5 w-5 text-primary" />
-                                        </div>
-                                        <p className="text-3xl font-bold">14</p>
-                                        <p className="mt-auto text-xs text-muted-foreground">
-                                            2 in progress
-                                        </p>
-                                    </CardContent>
-                                </Card>
+  const allReviews = instructorCourses.flatMap((c: any) =>
+    (c.reviews || []).map((r: any) => ({ ...r, courseTitle: c.title }))
+  );
+  const totalCourses = instructorCourses.length;
+  const totalReviews = allReviews.length;
+  const totalStudents = instructorCourses.reduce(
+    (acc: number, c: any) => acc + (c.enrollments?.length || 0),
+    0
+  );
+  const averageRating =
+    totalReviews > 0
+      ? (
+          allReviews.reduce((acc: number, r: any) => acc + r.rating, 0) /
+          totalReviews
+        ).toFixed(1)
+      : "0.0";
 
-                                {/* Stats Card 4 */}
-                                <Card className="hover:shadow-md transition-shadow">
-                                    <CardContent className="flex flex-col p-6 h-full">
-                                        <div className="flex items-center justify-between pb-2">
-                                            <p className="text-sm font-medium text-muted-foreground">
-                                                Review Count
-                                            </p>
-                                            <MessageSquare className="h-5 w-5 text-primary" />
-                                        </div>
-                                        <p className="text-3xl font-bold">3.2k</p>
-                                        <p className="mt-auto text-xs text-muted-foreground">
-                                            Top 5% Instructor
-                                        </p>
-                                    </CardContent>
-                                </Card>
-                            </div>
-                        </div>
+  const page = searchParams?.page ? parseInt(searchParams.page) : 1;
+  const pageSize = 2;
+  const showAllReviews = searchParams?.view === 'reviews';
+  const displayedReviews = showAllReviews 
+    ? allReviews.slice((page - 1) * pageSize, page * pageSize)
+    : allReviews.slice(0, 5);
+  const totalPages = Math.ceil(totalReviews / pageSize);
+  const createPageUrl = (newPage: number) => `/profile?view=reviews&page=${newPage}`;
 
-                        {/* Courses Taught */}
-                        <Card>
-                            <div className="flex items-center justify-between border-b p-6">
-                                <h3 className="text-lg font-semibold">Courses Taught</h3>
-                                <Button variant="ghost" className="text-primary hover:text-primary/80">
-                                    View All Courses
-                                </Button>
-                            </div>
-                            <div className="grid grid-cols-1 divide-y border-b md:grid-cols-2 md:divide-x md:divide-y-0">
-                                {/* Course 1 */}
-                                <div className="p-6 hover:bg-muted/50 transition-colors">
-                                    <div className="mb-4 flex justify-between items-start">
-                                        <Badge variant="secondary" className="bg-accent/10 text-emerald-800 hover:bg-accent/20">
-                                            Bestseller
-                                        </Badge>
-                                        <div className="flex items-center gap-1 text-amber-500">
-                                            <span className="text-sm font-bold">4.9</span>
-                                            <Star className="h-3 w-3 fill-current" />
-                                            <span className="text-xs text-muted-foreground">(1.2k)</span>
-                                        </div>
-                                    </div>
-                                    <h4 className="mb-2 text-lg font-bold line-clamp-1">
-                                        Advanced React Patterns & Performance
-                                    </h4>
-                                    <p className="mb-4 text-sm text-muted-foreground line-clamp-2">
-                                        Master advanced React design patterns, performance
-                                        optimization techniques, and state management strategies.
-                                    </p>
-                                    <div className="mt-auto flex items-center justify-between">
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                            <Clock className="h-4 w-4" />
-                                            <span>12h 30m</span>
-                                            <span className="mx-1">•</span>
-                                            <User className="h-4 w-4" />
-                                            <span>4,520 students</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Course 2 */}
-                                <div className="p-6 hover:bg-muted/50 transition-colors">
-                                    <div className="mb-4 flex justify-between items-start">
-                                        <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20">
-                                            New
-                                        </Badge>
-                                        <div className="flex items-center gap-1 text-amber-500">
-                                            <span className="text-sm font-bold">5.0</span>
-                                            <Star className="h-3 w-3 fill-current" />
-                                            <span className="text-xs text-muted-foreground">(85)</span>
-                                        </div>
-                                    </div>
-                                    <h4 className="mb-2 text-lg font-bold line-clamp-1">
-                                        TypeScript for Professionals
-                                    </h4>
-                                    <p className="mb-4 text-sm text-muted-foreground line-clamp-2">
-                                        A deep dive into TypeScript's type system, generics, and
-                                        configuration for enterprise-scale applications.
-                                    </p>
-                                    <div className="mt-auto flex items-center justify-between">
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                            <Clock className="h-4 w-4" />
-                                            <span>8h 15m</span>
-                                            <span className="mx-1">•</span>
-                                            <User className="h-4 w-4" />
-                                            <span>850 students</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-1 divide-y md:grid-cols-2 md:divide-x md:divide-y-0">
-                                {/* Course 3 */}
-                                <div className="p-6 hover:bg-muted/50 transition-colors">
-                                    <div className="mb-4 flex justify-between items-start">
-                                        <Badge variant="outline">Intermediate</Badge>
-                                        <div className="flex items-center gap-1 text-amber-500">
-                                            <span className="text-sm font-bold">4.8</span>
-                                            <Star className="h-3 w-3 fill-current" />
-                                            <span className="text-xs text-muted-foreground">(540)</span>
-                                        </div>
-                                    </div>
-                                    <h4 className="mb-2 text-lg font-bold line-clamp-1">
-                                        Full Stack Node.js with GraphQL
-                                    </h4>
-                                    <p className="mb-4 text-sm text-muted-foreground line-clamp-2">
-                                        Build scalable APIs using Node.js, Express, and GraphQL.
-                                        Learn schema design and resolver optimization.
-                                    </p>
-                                    <div className="mt-auto flex items-center justify-between">
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                            <Clock className="h-4 w-4" />
-                                            <span>18h 45m</span>
-                                            <span className="mx-1">•</span>
-                                            <User className="h-4 w-4" />
-                                            <span>2,100 students</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Course 4 */}
-                                <div className="p-6 hover:bg-muted/50 transition-colors">
-                                    <div className="mb-4 flex justify-between items-start">
-                                        <Badge variant="outline">Beginner</Badge>
-                                        <div className="flex items-center gap-1 text-amber-500">
-                                            <span className="text-sm font-bold">4.7</span>
-                                            <Star className="h-3 w-3 fill-current" />
-                                            <span className="text-xs text-muted-foreground">(2.1k)</span>
-                                        </div>
-                                    </div>
-                                    <h4 className="mb-2 text-lg font-bold line-clamp-1">
-                                        Web Development Bootcamp 2024
-                                    </h4>
-                                    <p className="mb-4 text-sm text-muted-foreground line-clamp-2">
-                                        The complete guide to becoming a web developer. Covers HTML,
-                                        CSS, JS, and modern frameworks.
-                                    </p>
-                                    <div className="mt-auto flex items-center justify-between">
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                            <Clock className="h-4 w-4" />
-                                            <span>42h 00m</span>
-                                            <span className="mx-1">•</span>
-                                            <User className="h-4 w-4" />
-                                            <span>5,300 students</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </Card>
-
-                        {/* Recent Reviews */}
-                        <Card>
-                            <CardHeader className="border-b p-6">
-                                <CardTitle className="text-lg font-semibold">
-                                    Recent Reviews
-                                </CardTitle>
-                            </CardHeader>
-                            <div className="divide-y">
-                                {/* Review 1 */}
-                                <div className="flex flex-col gap-3 p-6">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <Avatar className="h-10 w-10 bg-indigo-100 dark:bg-indigo-900">
-                                                <AvatarFallback className="bg-indigo-100 text-primary dark:bg-indigo-900 dark:text-white">JD</AvatarFallback>
-                                            </Avatar>
-                                            <div>
-                                                <p className="text-sm font-bold text-foreground">
-                                                    John Davis
-                                                </p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    Student • 2 days ago
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="flex text-amber-500">
-                                            {[...Array(5)].map((_, i) => (
-                                                <Star key={i} className="h-3.5 w-3.5 fill-current" />
-                                            ))}
-                                        </div>
-                                    </div>
-                                    <p className="text-sm italic text-muted-foreground">
-                                        "Sarah explains complex topics with such clarity. Her React
-                                        course completely changed how I approach frontend
-                                        architecture. Highly recommended!"
-                                    </p>
-                                </div>
-
-                                {/* Review 2 */}
-                                <div className="flex flex-col gap-3 p-6">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <Avatar className="h-10 w-10 bg-teal-100 dark:bg-teal-900">
-                                                <AvatarFallback className="bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-100">MK</AvatarFallback>
-                                            </Avatar>
-                                            <div>
-                                                <p className="text-sm font-bold text-foreground">
-                                                    Maria Kornikova
-                                                </p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    Student • 1 week ago
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="flex text-amber-500">
-                                            {[...Array(4)].map((_, i) => (
-                                                <Star key={i} className="h-3.5 w-3.5 fill-current" />
-                                            ))}
-                                            <Star className="h-3.5 w-3.5 text-muted-foreground/30" />
-                                        </div>
-                                    </div>
-                                    <p className="text-sm italic text-muted-foreground">
-                                        "Great content on TypeScript, although I wish there were more
-                                        practice exercises on generics. Still one of the best
-                                        instructors on the platform."
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="border-t p-4 text-center">
-                                <Button variant="ghost" className="text-primary hover:text-primary/80">
-                                    View all 3,240 reviews
-                                </Button>
-                            </div>
-                        </Card>
-                    </div>
-                </div>
-            </div>
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            Instructor Profile
+          </h1>
+          <p className="mt-1 text-muted-foreground">
+            Manage your public presence and view your impact.
+          </p>
         </div>
-    );
+        <NavLink href="/profile/edit">
+          <Button>
+            <Edit className="mr-2 h-4 w-4" />
+            Edit Profile
+          </Button>
+        </NavLink>
+      </div>
+
+      <div className="grid grid-cols-12 gap-6">
+        {/* Left Column: Profile Info */}
+        <div className="col-span-12 lg:col-span-4 xl:col-span-3">
+          <div className="flex flex-col gap-6">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex flex-col items-center gap-4 text-center">
+                  <Avatar className="h-32 w-32 ring-4 ring-primary/20">
+                    <AvatarImage
+                      src={user?.image || undefined}
+                      alt={user?.name || "Instructor"}
+                    />
+                    <AvatarFallback>
+                      {user?.name?.charAt(0) || "I"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col">
+                    <h2 className="text-2xl font-bold">
+                      {user?.name || "Instructor Name"}
+                    </h2>
+                    <p className="mt-1 text-sm font-medium text-primary">
+                      {user?.email || "Instructor"}
+                    </p>
+                    <p className="mt-2 flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                      <MapPin className="h-4 w-4" /> 
+                        {user?.location || "Location not specified"}
+                    </p>
+                  </div>
+                  <Separator className="my-2" />
+                  <div className="flex justify-center gap-4">
+                    <NavLink
+                      href="#"
+                      className="text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      <Globe className="h-5 w-5" />
+                    </NavLink>
+                    <NavLink
+                      href="#"
+                      className="text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      <Twitter className="h-5 w-5" />
+                    </NavLink>
+                    <NavLink
+                      href="#"
+                      className="text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      <Github className="h-5 w-5" />
+                    </NavLink>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold">
+                  About Me
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                    {user?.bio || "This instructor has not added a bio yet."}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Right Column: Content */}
+        <div className="col-span-12 lg:col-span-8 xl:col-span-9">
+          <div className="flex flex-col gap-6">
+            <div>
+              <h2 className="mb-4 text-xl font-semibold text-foreground">
+                Teaching Impact
+              </h2>
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+                {/* Stats Card 1 */}
+                <Card className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between space-y-0 pb-2">
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Avg. Course Rating
+                      </p>
+                      <Star className="h-5 w-5 text-accent-foreground" />
+                    </div>
+                    <div className="flex items-baseline gap-2 pt-2">
+                      <span className="text-3xl font-bold">
+                        {averageRating}
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        / 5.0
+                      </span>
+                    </div>
+                    <Progress value={98} className="mt-4 h-1.5" />
+                  </CardContent>
+                </Card>
+
+                {/* Stats Card 2 */}
+                <Card className="hover:shadow-md transition-shadow">
+                  <CardContent className="flex flex-col p-6 h-full">
+                    <div className="flex items-center justify-between pb-2">
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Total Students
+                      </p>
+                      <Users className="h-5 w-5 text-primary" />
+                    </div>
+                    <p className="text-3xl font-bold">{totalStudents}</p>
+                    <p className="mt-auto text-xs text-muted-foreground">
+                      {totalStudents > 1000 ? "Popular Instructor" : "Keep Growing"}
+                    </p>
+                  </CardContent>
+                </Card>
+
+                {/* Stats Card 3 */}
+                <Card className="hover:shadow-md transition-shadow">
+                  <CardContent className="flex flex-col p-6 h-full">
+                    <div className="flex items-center justify-between pb-2">
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Courses Taught
+                      </p>
+                      <Video className="h-5 w-5 text-primary" />
+                    </div>
+                    <p className="text-3xl font-bold">{totalCourses}</p>
+                    <p className="mt-auto text-xs text-muted-foreground">
+                      {totalCourses > 5 ? "Experienced Instructor" : "New Instructor"}
+                    </p>
+                  </CardContent>
+                </Card>
+
+                {/* Stats Card 4 */}
+                <Card className="hover:shadow-md transition-shadow">
+                  <CardContent className="flex flex-col p-6 h-full">
+                    <div className="flex items-center justify-between pb-2">
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Review Count
+                      </p>
+                      <MessageSquare className="h-5 w-5 text-primary" />
+                    </div>
+                    <p className="text-3xl font-bold">{totalReviews}</p>
+                    <p className="mt-auto text-xs text-muted-foreground">
+                        {totalReviews > 50 ? "Well Reviewed" : "More Reviews Needed"}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
+            {/* Courses Taught */}
+            <Card>
+              <div className="flex items-center justify-between border-b p-6">
+                <h3 className="text-lg font-semibold">Courses Taught</h3>
+                <Button
+                  variant="ghost"
+                  className="text-primary hover:text-primary/80"
+                >
+                  View All Courses
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 divide-y border-b md:grid-cols-2 md:divide-x md:divide-y-0">
+                {instructorCourses.map((course: any) => (
+                  <div
+                    key={course.id}
+                    className="p-6 hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="mb-4 flex justify-between items-start">
+                      <Badge
+                        variant="secondary"
+                        className="bg-primary/10 text-primary hover:bg-primary/20"
+                      >
+                        {course.level || "Course"}
+                      </Badge>
+                      <div className="flex items-center gap-1 text-amber-500">
+                        <span className="text-sm font-bold">
+                          {course.reviews?.length > 0
+                            ? (
+                                course.reviews.reduce(
+                                  (a: any, b: any) => a + b.rating,
+                                  0
+                                ) / course.reviews.length
+                              ).toFixed(1)
+                            : "N/A"}
+                        </span>
+                        <Star className="h-3 w-3 fill-current" />
+                        <span className="text-xs text-muted-foreground">
+                          ({course.reviews?.length || 0})
+                        </span>
+                      </div>
+                    </div>
+                    <h4 className="mb-2 text-lg font-bold line-clamp-1">
+                      {course.title}
+                    </h4>
+                    <p className="mb-4 text-sm text-muted-foreground line-clamp-2">
+                      {course.description}
+                    </p>
+                    <div className="mt-auto flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Clock className="h-4 w-4" />
+                        <span>{course.duration || "10h"}</span>
+                        <span className="mx-1">•</span>
+                        <User className="h-4 w-4" />
+                        <span>{course.enrollments?.length || 0} students</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            {/* Recent Reviews */}
+            <Card>
+              <CardHeader className="border-b p-6">
+                <CardTitle className="text-lg font-semibold">
+                  {showAllReviews ? "All Reviews" : "Recent Reviews"}
+                </CardTitle>
+              </CardHeader>
+              <div className="divide-y">
+                {displayedReviews.map((review: any, i: number) => (
+                  <div key={i} className="flex flex-col gap-3 p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10 bg-indigo-100 dark:bg-indigo-900">
+                          <AvatarImage src={review.user?.image} />
+                          <AvatarFallback className="bg-indigo-100 text-primary dark:bg-indigo-900 dark:text-white">
+                            {review.user?.name?.charAt(0) || "S"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-bold text-foreground">
+                            {review.user?.name || "Student"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {review.courseTitle}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex text-amber-500">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`h-3.5 w-3.5 ${
+                              i < review.rating
+                                ? "fill-current"
+                                : "text-muted-foreground/30"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-sm italic text-muted-foreground">
+                      "{review.comment}"
+                    </p>
+                  </div>
+                ))}
+              </div>
+              {showAllReviews ? (
+                <div className="p-4">
+                  <PaginationControl currentPage={page} totalPages={totalPages} createPageUrl={createPageUrl} />
+                </div>
+              ) : (
+                <div className="border-t p-4 text-center">
+                  <NavLink href="/profile?view=reviews">
+                    <Button
+                      variant="ghost"
+                      className="text-primary hover:text-primary/80"
+                    >
+                      View all {totalReviews} reviews
+                    </Button>
+                  </NavLink>
+                </div>
+              )}
+            </Card>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
