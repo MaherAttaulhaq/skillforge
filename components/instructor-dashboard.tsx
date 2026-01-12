@@ -18,43 +18,9 @@ import {
   Edit,
 } from "lucide-react";
 import { NavLink } from "@/components/nav-link";
-import { db } from "@/db";
-import { courses, reviews, enrollments, users } from "@/db/schema";
-import { eq, inArray } from "drizzle-orm";
 import { PaginationControl } from "@/components/PaginationControl";
 
-export default async function InstructorProfilePage({ user, searchParams }: { user?: any, searchParams?: any }) {
-  const coursesData = await db.select().from(courses).where(eq(courses.instructorId, user.id));
-  const courseIds = coursesData.map((c) => c.id);
-
-  let reviewsData: any[] = [];
-  let enrollmentsData: any[] = [];
-
-  if (courseIds.length > 0) {
-    reviewsData = await db
-      .select({
-        id: reviews.id,
-        rating: reviews.rating,
-        comment: reviews.comment,
-        courseId: reviews.courseId,
-        createdAt: reviews.createdAt,
-        user: users,
-      })
-      .from(reviews)
-      .leftJoin(users, eq(reviews.userId, users.id))
-      .where(inArray(reviews.courseId, courseIds));
-
-    enrollmentsData = await db
-      .select()
-      .from(enrollments)
-      .where(inArray(enrollments.courseId, courseIds));
-  }
-
-  const instructorCourses = coursesData.map((course) => ({
-    ...course,
-    reviews: reviewsData.filter((r) => r.courseId === course.id),
-    enrollments: enrollmentsData.filter((e) => e.courseId === course.id),
-  }));
+export default function InstructorProfilePage({ user, searchParams, instructorCourses }: { user?: any, searchParams?: any, instructorCourses: any[] }) {
 
   const allReviews = instructorCourses.flatMap((c: any) =>
     (c.reviews || []).map((r: any) => ({ ...r, courseTitle: c.title }))
@@ -194,7 +160,7 @@ export default async function InstructorProfilePage({ user, searchParams }: { us
                         / 5.0
                       </span>
                     </div>
-                    <Progress value={98} className="mt-4 h-1.5" />
+                    <Progress value={averageRating ? (Number(averageRating) / 5) * 100 : 0} className="mt-4 h-1.5" />
                   </CardContent>
                 </Card>
 

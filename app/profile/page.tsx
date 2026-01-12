@@ -1,32 +1,83 @@
-import { auth } from "@/auth"
-import { redirect } from "next/navigation"
-import { db } from "@/db"
-import { users } from "@/db/schema"
-import { eq } from "drizzle-orm"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Verified, Award, FileText, GraduationCap } from "lucide-react"
-import InstructorProfilePage from "@/components/instructor-dashboard"
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
+import { db } from "@/db";
+import { users, courses, reviews, enrollments } from "@/db/schema";
+import { eq, inArray } from "drizzle-orm";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Verified, Award, FileText, GraduationCap } from "lucide-react";
+import InstructorProfilePage from "@/components/instructor-dashboard";
 
-export default async function ProfilePage({ searchParams }: { searchParams: Promise<any> }) {
-  const params = await searchParams
-  const session = await auth()
+export default async function ProfilePage({
+  searchParams,
+}: {
+  searchParams: Promise<any>;
+}) {
+  const params = await searchParams;
+  const session = await auth();
 
   if (!session?.user?.email) {
-    return redirect("/")
+    return redirect("/");
   }
 
   const user = await db.query.users.findFirst({
     where: eq(users.email, session.user.email),
-  })
+  });
 
-  if (!user) return redirect("/")
+  if (!user) return redirect("/");
 
   if (user.role === "instructor") {
-    return <InstructorProfilePage user={user} searchParams={params} />
+    const coursesData = await db
+      .select()
+      .from(courses)
+      .where(eq(courses.instructorId, user.id));
+    const courseIds = coursesData.map((c) => c.id);
+
+    let reviewsData: any[] = [];
+    let enrollmentsData: any[] = [];
+
+    if (courseIds.length > 0) {
+      reviewsData = await db
+        .select({
+          id: reviews.id,
+          rating: reviews.rating,
+          comment: reviews.comment,
+          courseId: reviews.courseId,
+          createdAt: reviews.createdAt,
+          user: users,
+        })
+        .from(reviews)
+        .leftJoin(users, eq(reviews.userId, users.id))
+        .where(inArray(reviews.courseId, courseIds));
+
+      enrollmentsData = await db
+        .select()
+        .from(enrollments)
+        .where(inArray(enrollments.courseId, courseIds));
+    }
+
+    const instructorCourses = coursesData.map((course) => ({
+      ...course,
+      reviews: reviewsData.filter((r) => r.courseId === course.id),
+      enrollments: enrollmentsData.filter((e) => e.courseId === course.id),
+    }));
+    return (
+      <InstructorProfilePage
+        user={user}
+        searchParams={params}
+        instructorCourses={instructorCourses}
+      />
+    );
   }
 
   return (
@@ -42,28 +93,50 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
                 <CardContent className="p-6 flex flex-col items-center text-center gap-4">
                   <div className="relative">
                     <Avatar className="h-24 w-24 ring-4 ring-primary/20">
-                      <AvatarImage src={user.image || undefined} alt={user.name || "User"} />
-                      <AvatarFallback>{user.name?.charAt(0) || "U"}</AvatarFallback>
+                      <AvatarImage
+                        src={user.image || undefined}
+                        alt={user.name || "User"}
+                      />
+                      <AvatarFallback>
+                        {user.name?.charAt(0) || "U"}
+                      </AvatarFallback>
                     </Avatar>
                     <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border-4 border-card bg-accent text-white">
                       <Verified className="h-4 w-4" />
                     </div>
                   </div>
                   <div className="flex flex-col">
-                    <p className="text-xl font-bold tracking-tight">{user.name}</p>
-                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                    <p className="text-xl font-bold tracking-tight">
+                      {user.name}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {user.email}
+                    </p>
                   </div>
                   <Button className="w-full">Edit Profile</Button>
                 </CardContent>
               </Card>
               <Card className="shadow-sm">
                 <CardHeader className="p-6 pb-2">
-                  <CardTitle className="text-lg font-semibold tracking-tight">My Skills</CardTitle>
+                  <CardTitle className="text-lg font-semibold tracking-tight">
+                    My Skills
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6 pt-2">
                   <div className="flex flex-wrap gap-2">
-                    {["JavaScript", "React", "Node.js", "TypeScript", "Tailwind CSS", "SQL"].map((skill) => (
-                      <Badge key={skill} variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20">
+                    {[
+                      "JavaScript",
+                      "React",
+                      "Node.js",
+                      "TypeScript",
+                      "Tailwind CSS",
+                      "SQL",
+                    ].map((skill) => (
+                      <Badge
+                        key={skill}
+                        variant="secondary"
+                        className="bg-primary/10 text-primary hover:bg-primary/20"
+                      >
                         {skill}
                       </Badge>
                     ))}
@@ -75,27 +148,53 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
           <div className="col-span-12 lg:col-span-8 xl:col-span-9">
             <div className="flex flex-col gap-6">
               <div>
-                <h2 className="text-xl font-semibold tracking-tight mb-4">Dashboard Statistics</h2>
+                <h2 className="text-xl font-semibold tracking-tight mb-4">
+                  Dashboard Statistics
+                </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
                   <Card className="shadow-sm">
                     <CardContent className="p-6 flex flex-col gap-4">
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-muted-foreground">Overall ATS Score</p>
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Overall ATS Score
+                        </p>
                         <Award className="h-5 w-5 text-accent" />
                       </div>
                       <div className="relative h-24 w-24 mx-auto flex items-center justify-center">
                         <svg className="h-full w-full" viewBox="0 0 36 36">
-                          <circle className="stroke-current text-muted/20" cx="18" cy="18" fill="none" r="16" strokeWidth="3"></circle>
-                          <circle className="stroke-current text-accent transition-all duration-500" cx="18" cy="18" fill="none" r="16" strokeDasharray="100" strokeDashoffset="12" strokeLinecap="round" strokeWidth="3" transform="rotate(-90 18 18)"></circle>
+                          <circle
+                            className="stroke-current text-muted/20"
+                            cx="18"
+                            cy="18"
+                            fill="none"
+                            r="16"
+                            strokeWidth="3"
+                          ></circle>
+                          <circle
+                            className="stroke-current text-accent transition-all duration-500"
+                            cx="18"
+                            cy="18"
+                            fill="none"
+                            r="16"
+                            strokeDasharray="100"
+                            strokeDashoffset="12"
+                            strokeLinecap="round"
+                            strokeWidth="3"
+                            transform="rotate(-90 18 18)"
+                          ></circle>
                         </svg>
-                        <p className="absolute text-2xl font-bold text-accent">88%</p>
+                        <p className="absolute text-2xl font-bold text-accent">
+                          88%
+                        </p>
                       </div>
                     </CardContent>
                   </Card>
                   <Card className="shadow-sm">
                     <CardContent className="p-6 flex flex-col gap-2">
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-muted-foreground">Resumes Analyzed</p>
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Resumes Analyzed
+                        </p>
                         <FileText className="h-5 w-5 text-muted-foreground" />
                       </div>
                       <p className="text-4xl font-bold tracking-tight">12</p>
@@ -104,7 +203,9 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
                   <Card className="shadow-sm">
                     <CardContent className="p-6 flex flex-col gap-2">
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-muted-foreground">Courses Completed</p>
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Courses Completed
+                        </p>
                         <GraduationCap className="h-5 w-5 text-muted-foreground" />
                       </div>
                       <p className="text-4xl font-bold tracking-tight">7</p>
@@ -113,7 +214,9 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
                   <Card className="shadow-sm">
                     <CardContent className="p-6 flex flex-col gap-2">
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-muted-foreground">Skill Badges Earned</p>
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Skill Badges Earned
+                        </p>
                         <Award className="h-5 w-5 text-muted-foreground" />
                       </div>
                       <p className="text-4xl font-bold tracking-tight">15</p>
@@ -123,29 +226,58 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
               </div>
               <Card className="shadow-sm">
                 <CardHeader className="p-6 border-b">
-                  <CardTitle className="text-lg font-semibold tracking-tight">Completed Courses & Badges</CardTitle>
+                  <CardTitle className="text-lg font-semibold tracking-tight">
+                    Completed Courses & Badges
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="px-6 py-3">Course Title</TableHead>
-                        <TableHead className="px-6 py-3">Completion Date</TableHead>
-                        <TableHead className="px-6 py-3 text-right">Certificate</TableHead>
+                        <TableHead className="px-6 py-3">
+                          Course Title
+                        </TableHead>
+                        <TableHead className="px-6 py-3">
+                          Completion Date
+                        </TableHead>
+                        <TableHead className="px-6 py-3 text-right">
+                          Certificate
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {[
-                        { title: "Advanced React Patterns", date: "2023-11-15" },
-                        { title: "TypeScript for Professionals", date: "2023-09-02" },
-                        { title: "Modern CSS with Tailwind", date: "2023-07-21" },
-                        { title: "Data Structures & Algorithms", date: "2023-05-10" }
+                        {
+                          title: "Advanced React Patterns",
+                          date: "2023-11-15",
+                        },
+                        {
+                          title: "TypeScript for Professionals",
+                          date: "2023-09-02",
+                        },
+                        {
+                          title: "Modern CSS with Tailwind",
+                          date: "2023-07-21",
+                        },
+                        {
+                          title: "Data Structures & Algorithms",
+                          date: "2023-05-10",
+                        },
                       ].map((course, index) => (
                         <TableRow key={index}>
-                          <TableCell className="px-6 py-4 font-medium">{course.title}</TableCell>
-                          <TableCell className="px-6 py-4 text-muted-foreground">{course.date}</TableCell>
+                          <TableCell className="px-6 py-4 font-medium">
+                            {course.title}
+                          </TableCell>
+                          <TableCell className="px-6 py-4 text-muted-foreground">
+                            {course.date}
+                          </TableCell>
                           <TableCell className="px-6 py-4 text-right">
-                            <Button variant="link" className="text-primary font-medium p-0 h-auto">View</Button>
+                            <Button
+                              variant="link"
+                              className="text-primary font-medium p-0 h-auto"
+                            >
+                              View
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -158,5 +290,5 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
         </div>
       </div>
     </div>
-  )
+  );
 }
