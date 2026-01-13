@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/table";
 import { Verified, Award, FileText, GraduationCap } from "lucide-react";
 import InstructorProfilePage from "@/components/instructor-dashboard";
+import Link from "next/link";
 
 export default async function ProfilePage({
   searchParams,
@@ -113,7 +114,9 @@ export default async function ProfilePage({
                       {user.email}
                     </p>
                   </div>
-                  <Button className="w-full">Edit Profile</Button>
+                  <Link href="/profile/edit" className="w-full">
+                    <Button className="w-full">Edit Profile</Button>
+                  </Link>
                 </CardContent>
               </Card>
               <Card className="shadow-sm">
@@ -124,22 +127,23 @@ export default async function ProfilePage({
                 </CardHeader>
                 <CardContent className="p-6 pt-2">
                   <div className="flex flex-wrap gap-2">
-                    {[
-                      "JavaScript",
-                      "React",
-                      "Node.js",
-                      "TypeScript",
-                      "Tailwind CSS",
-                      "SQL",
-                    ].map((skill) => (
-                      <Badge
-                        key={skill}
-                        variant="secondary"
-                        className="bg-primary/10 text-primary hover:bg-primary/20"
-                      >
-                        {skill}
-                      </Badge>
-                    ))}
+                    {(user as any).skills &&
+                    Array.isArray((user as any).skills) &&
+                    (user as any).skills.length > 0 ? (
+                      ((user as any).skills as string[]).map((skill) => (
+                        <Badge
+                          key={skill}
+                          variant="secondary"
+                          className="bg-primary/10 text-primary hover:bg-primary/20"
+                        >
+                          {skill}
+                        </Badge>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        No skills added yet.
+                      </p>
+                    )}
                   </div>
                 </CardContent>
               </Card>

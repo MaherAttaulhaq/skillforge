@@ -44,7 +44,6 @@ export default function CourseDetails({
       const data = await res.json();
       console.log(data);
 
-
       setCourse(data.course);
       setModulesWithLessons(data.modulesWithLessons);
       setUserProgress(data.userProgress);
@@ -55,7 +54,7 @@ export default function CourseDetails({
     const fetchSession = async () => {
       const res = await fetch("/api/auth/session");
       const data = await res.json();
-      setSession(data.session);
+      setSession(data?.session);
     };
 
     fetchData();
@@ -208,10 +207,11 @@ export default function CourseDetails({
                           return (
                             <li
                               key={lesson.id}
-                              className={`flex items-center justify-between p-3 rounded-md transition-colors ${currentLesson?.id === lesson.id
-                                ? "bg-primary/10 text-primary"
-                                : "hover:bg-muted/50"
-                                }`}
+                              className={`flex items-center justify-between p-3 rounded-md transition-colors ${
+                                currentLesson?.id === lesson.id
+                                  ? "bg-primary/10 text-primary"
+                                  : "hover:bg-muted/50"
+                              }`}
                             >
                               <Link
                                 href={`/courses/details/${course.id}/${course.slug}?lesson=${lesson.id}`}
@@ -221,10 +221,11 @@ export default function CourseDetails({
                                 <span>{lesson.title}</span>
                               </Link>
                               <CheckCircle
-                                className={`h-5 w-5 ${isCompleted
-                                  ? "text-green-500"
-                                  : "text-muted-foreground"
-                                  }`}
+                                className={`h-5 w-5 ${
+                                  isCompleted
+                                    ? "text-green-500"
+                                    : "text-muted-foreground"
+                                }`}
                               />
                             </li>
                           );
