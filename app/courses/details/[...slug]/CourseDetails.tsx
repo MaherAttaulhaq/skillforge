@@ -9,7 +9,13 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { CheckCircle, PlayCircle, Play, ExternalLink } from "lucide-react";
+import {
+  CheckCircle,
+  PlayCircle,
+  Play,
+  ExternalLink,
+  Lock,
+} from "lucide-react";
 import { MarkAsCompleteButton } from "./MarkAsCompleteButton";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -26,39 +32,42 @@ export default function CourseDetails({
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
   const [course, setCourse] = useState<string | null>(null);
-  const [modulesWithLessons, setModulesWithLessons] = useState<string[]>([]);
+  const [modulesWithLessons, setModulesWithLessons] = useState<any[]>([]);
 
-  const [userProgress, setUserProgress] = useState<string[]>([]);
+  const [userProgress, setUserProgress] = useState<any[]>([]);
   const [relatedCourses, setRelatedCourses] = useState<any[]>([]);
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const loadData = async () => {
       const { slug } = params;
       const id = slug && slug[0];
 
       if (!id) return;
 
-      const res = await fetch(`/api/courses/${id}`);
-      const data = await res.json();
-      console.log(data);
+      try {
+        const [courseRes, sessionRes] = await Promise.all([
+          fetch(`/api/courses/${id}`),
+          fetch("/api/auth/session"),
+        ]);
 
-      setCourse(data.course);
-      setModulesWithLessons(data.modulesWithLessons);
-      setUserProgress(data.userProgress);
-      setRelatedCourses(data.relatedCourses);
-      setLoading(false);
+        const courseData = await courseRes.json();
+        const sessionData = await sessionRes.json();
+
+        setCourse(courseData.course);
+        setModulesWithLessons(courseData.modulesWithLessons);
+        setUserProgress(courseData.userProgress);
+        setRelatedCourses(courseData.relatedCourses);
+        setSession(sessionData?.session);
+      } catch (error) {
+        console.error("Error loading data:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    const fetchSession = async () => {
-      const res = await fetch("/api/auth/session");
-      const data = await res.json();
-      setSession(data?.session);
-    };
-
-    fetchData();
-    fetchSession();
+    loadData();
   }, [params]);
 
   if (loading) {
@@ -134,7 +143,22 @@ export default function CourseDetails({
               )}
             </div>
             <div className="rounded-xl overflow-hidden shadow-lg">
-              {currentLesson?.videoUrl ? (
+              {!user ? (
+                <div className="flex flex-col items-center justify-center aspect-video bg-slate-100 text-center p-6">
+                  <div className="bg-slate-200 p-4 rounded-full mb-4">
+                    <Lock className="h-8 w-8 text-slate-500" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-2">
+                    This lesson is locked
+                  </h3>
+                  <p className="text-slate-600 mb-6">
+                    Please log in to access this course content.
+                  </p>
+                  <Link href="/api/auth/signin">
+                    <Button>Log In to Continue</Button>
+                  </Link>
+                </div>
+              ) : currentLesson?.videoUrl ? (
                 <div className="relative aspect-video">
                   <video
                     src={currentLesson.videoUrl}

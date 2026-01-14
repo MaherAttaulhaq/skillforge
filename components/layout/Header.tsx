@@ -50,7 +50,7 @@ export default async function Header() {
             :
             <Link href="/register">
               <Button className="font-semibold shadow-sm">
-                Register Now
+                 Sign up
               </Button>
             </Link>
           }
