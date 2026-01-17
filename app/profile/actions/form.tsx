@@ -1,10 +1,11 @@
 "use server";
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { users, userSkills } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { auth } from "@/auth";
+import { revalidatePath } from "next/cache";
 
 async function saveFile(file: File) {
   const uploadsDir = path.join(process.cwd(), "public", "uploads");
@@ -72,7 +73,7 @@ export const submitAction = async (
           skillList.map((skill) => ({
             userId: user.id,
             skill: skill.trim(),
-          }))
+          })),
         );
       }
     }
