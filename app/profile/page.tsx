@@ -1,8 +1,17 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { users, courses, reviews, enrollments } from "@/db/schema";
-import { eq, inArray } from "drizzle-orm";
+import {
+  users,
+  courses,
+  reviews,
+  enrollments,
+  modules,
+  lessons,
+  lessonProgress,
+  userSkills,
+} from "@/db/schema";
+import { eq, inArray, and } from "drizzle-orm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +27,7 @@ import {
 import { Verified, Award, FileText, GraduationCap } from "lucide-react";
 import InstructorProfilePage from "@/components/instructor-dashboard";
 import Link from "next/link";
+import { Progress } from "@/components/ui/progress";
 
 export default async function ProfilePage({
   searchParams,
@@ -33,9 +43,18 @@ export default async function ProfilePage({
 
   const user = await db.query.users.findFirst({
     where: eq(users.email, session.user.email),
+    with: {
+      skills: {
+        columns: {
+          skill: true,
+        },
+      },
+    },
   });
-
+  
   if (!user) return redirect("/");
+
+  const skills = user.skills.map((s) => s.skill);
 
   if (user.role === "instructor") {
     const coursesData = await db
@@ -81,6 +100,59 @@ export default async function ProfilePage({
     );
   }
 
+  // Student Logic: Fetch enrolled courses and calculate progress
+  const userEnrollments = await db
+    .select({
+      course: courses,
+    })
+    .from(enrollments)
+    .innerJoin(courses, eq(enrollments.courseId, courses.id))
+    .where(eq(enrollments.userId, user.id));
+
+  const coursesWithProgress = await Promise.all(
+    userEnrollments.map(async ({ course }) => {
+      // Get all lessons for the course to calculate progress
+      const courseLessons = await db
+        .select({ id: lessons.id })
+        .from(modules)
+        .innerJoin(lessons, eq(modules.id, lessons.moduleId))
+        .where(eq(modules.courseId, course.id));
+
+      const totalLessons = courseLessons.length;
+
+      if (totalLessons === 0) {
+        return { ...course, progress: 0, status: "Not Started" };
+      }
+
+      const completedLessons = await db
+        .select()
+        .from(lessonProgress)
+        .where(
+          and(
+            eq(lessonProgress.userId, user.id),
+            eq(lessonProgress.isCompleted, true),
+            inArray(
+              lessonProgress.lessonId,
+              courseLessons.map((l) => l.id)
+            )
+          )
+        );
+
+      const progress = Math.round(
+        (completedLessons.length / totalLessons) * 100
+      );
+      let status = "In Progress";
+      if (progress === 0) status = "Not Started";
+      if (progress === 100) status = "Completed";
+
+      return { ...course, progress, status };
+    })
+  );
+
+  const completedCoursesCount = coursesWithProgress.filter(
+    (c) => c.status === "Completed"
+  ).length;
+
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mx-auto max-w-7xl">
@@ -95,7 +167,7 @@ export default async function ProfilePage({
                   <div className="relative">
                     <Avatar className="h-24 w-24 ring-4 ring-primary/20">
                       <AvatarImage
-                        src={user.image || undefined}
+                        src={user.image ? user.image : undefined}
                         alt={user.name || "User"}
                       />
                       <AvatarFallback>
@@ -114,6 +186,11 @@ export default async function ProfilePage({
                       {user.email}
                     </p>
                   </div>
+                  {(user as any).bio && (
+                    <p className="text-sm text-muted-foreground text-center">
+                      {(user as any).bio}
+                    </p>
+                  )}
                   <Link href="/profile/edit" className="w-full">
                     <Button className="w-full">Edit Profile</Button>
                   </Link>
@@ -127,10 +204,8 @@ export default async function ProfilePage({
                 </CardHeader>
                 <CardContent className="p-6 pt-2">
                   <div className="flex flex-wrap gap-2">
-                    {(user as any).skills &&
-                    Array.isArray((user as any).skills) &&
-                    (user as any).skills.length > 0 ? (
-                      ((user as any).skills as string[]).map((skill) => (
+                    {skills.length > 0 ? (
+                      skills.map((skill) => (
                         <Badge
                           key={skill}
                           variant="secondary"
@@ -140,7 +215,7 @@ export default async function ProfilePage({
                         </Badge>
                       ))
                     ) : (
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground italic">
                         No skills added yet.
                       </p>
                     )}
@@ -212,7 +287,9 @@ export default async function ProfilePage({
                         </p>
                         <GraduationCap className="h-5 w-5 text-muted-foreground" />
                       </div>
-                      <p className="text-4xl font-bold tracking-tight">7</p>
+                      <p className="text-4xl font-bold tracking-tight">
+                        {completedCoursesCount}
+                      </p>
                     </CardContent>
                   </Card>
                   <Card className="shadow-sm">
@@ -223,7 +300,9 @@ export default async function ProfilePage({
                         </p>
                         <Award className="h-5 w-5 text-muted-foreground" />
                       </div>
-                      <p className="text-4xl font-bold tracking-tight">15</p>
+                      <p className="text-4xl font-bold tracking-tight">
+                        {completedCoursesCount}
+                      </p>
                     </CardContent>
                   </Card>
                 </div>
@@ -231,7 +310,7 @@ export default async function ProfilePage({
               <Card className="shadow-sm">
                 <CardHeader className="p-6 border-b">
                   <CardTitle className="text-lg font-semibold tracking-tight">
-                    Completed Courses & Badges
+                    My Courses
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -241,50 +320,78 @@ export default async function ProfilePage({
                         <TableHead className="px-6 py-3">
                           Course Title
                         </TableHead>
-                        <TableHead className="px-6 py-3">
-                          Completion Date
-                        </TableHead>
+                        <TableHead className="px-6 py-3">Status</TableHead>
+                        <TableHead className="px-6 py-3">Progress</TableHead>
                         <TableHead className="px-6 py-3 text-right">
-                          Certificate
+                          Action
                         </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {[
-                        {
-                          title: "Advanced React Patterns",
-                          date: "2023-11-15",
-                        },
-                        {
-                          title: "TypeScript for Professionals",
-                          date: "2023-09-02",
-                        },
-                        {
-                          title: "Modern CSS with Tailwind",
-                          date: "2023-07-21",
-                        },
-                        {
-                          title: "Data Structures & Algorithms",
-                          date: "2023-05-10",
-                        },
-                      ].map((course, index) => (
-                        <TableRow key={index}>
-                          <TableCell className="px-6 py-4 font-medium">
-                            {course.title}
-                          </TableCell>
-                          <TableCell className="px-6 py-4 text-muted-foreground">
-                            {course.date}
-                          </TableCell>
-                          <TableCell className="px-6 py-4 text-right">
-                            <Button
-                              variant="link"
-                              className="text-primary font-medium p-0 h-auto"
+                      {coursesWithProgress.length > 0 ? (
+                        coursesWithProgress.map((course) => (
+                          <TableRow key={course.id}>
+                            <TableCell className="px-6 py-4 font-medium">
+                              {course.title}
+                            </TableCell>
+                            <TableCell className="px-6 py-4">
+                              <Badge
+                                variant={
+                                  course.status === "Completed"
+                                    ? "default"
+                                    : course.status === "In Progress"
+                                    ? "secondary"
+                                    : "outline"
+                                }
+                              >
+                                {course.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="px-6 py-4 w-1/3">
+                              <div className="flex items-center gap-2">
+                                <Progress
+                                  value={course.progress}
+                                  className="h-2"
+                                />
+                                <span className="text-xs text-muted-foreground w-8">
+                                  {course.progress}%
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="px-6 py-4 text-right">
+                              <Link
+                                href={`/courses/details/${course.id}/${course.slug}`}
+                              >
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-primary hover:text-primary/80"
+                                >
+                                  {course.status === "Completed"
+                                    ? "Review"
+                                    : "Continue"}
+                                </Button>
+                              </Link>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell
+                            colSpan={4}
+                            className="px-6 py-8 text-center text-muted-foreground"
+                          >
+                            You haven&apos;t enrolled in any courses yet.
+                            <br />
+                            <Link
+                              href="/courses"
+                              className="text-primary hover:underline mt-2 inline-block"
                             >
-                              View
-                            </Button>
+                              Browse Courses
+                            </Link>
                           </TableCell>
                         </TableRow>
-                      ))}
+                      )}
                     </TableBody>
                   </Table>
                 </CardContent>

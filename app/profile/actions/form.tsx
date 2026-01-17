@@ -1,9 +1,10 @@
-"use server"
-import { db } from "@/db"
-import { users } from "@/db/schema"
-import { eq } from "drizzle-orm"
+"use server";
+import { db } from "@/db";
+import { users } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { auth } from "@/auth";
 
 async function saveFile(file: File) {
   const uploadsDir = path.join(process.cwd(), "public", "uploads");
@@ -20,28 +21,65 @@ async function saveFile(file: File) {
   return `/uploads/${newFilename}`;
 }
 
-export const submitAction = async (prevState: { message: string; success: boolean }, formData: FormData) => {
-    const userId = 1; // Hardcoded user ID
+export const submitAction = async (
+  prevState: { message: string; success: boolean },
+  formData: FormData,
+) => {
+  const session = await auth();
 
-    const name = formData.get("name") as string;
-    const avatarFile = formData.get("avatar") as File | null;
+  if (!session?.user?.email) {
+    return {
+      success: false,
+      message: "You must be logged in to update your profile",
+    };
+  }
 
-    let avatarUrl: string | undefined;
+  const user = await db.query.users.findFirst({
+    where: eq(users.email, session.user.email),
+  });
 
-    try {
-        if (avatarFile && avatarFile.size > 0) {
-            avatarUrl = await saveFile(avatarFile);
-        }
+  if (!user) return { success: false, message: "User not found" };
 
-        const dataToUpdate: { name: string; avatar?: string } = { name };
-        if (avatarUrl) {
-            dataToUpdate.avatar = avatarUrl;
-        }
+  const name = formData.get("name") as string;
+  const bio = formData.get("bio") as string;
+  const skills = formData.get("skills") as string;
+  const avatarFile = formData.get("avatar") as File | null;
 
-        await db.update(users).set(dataToUpdate).where(eq(users.id, userId));
+  let avatarUrl: string | undefined;
 
-        return { success: true, message: "Profile updated successfully" };
-    } catch (error) {
-        return { success: false, message: "Failed to update profile" };
+  try {
+    if (avatarFile && avatarFile.size > 0) {
+      avatarUrl = await saveFile(avatarFile);
     }
-}
+
+    const dataToUpdate: { name: string; bio: string; avatar?: string } = {
+      name,
+      bio,
+    };
+    if (avatarUrl) {
+      dataToUpdate.avatar = avatarUrl;
+    }
+
+    await db.update(users).set(dataToUpdate).where(eq(users.id, user.id));
+
+    if (skills !== null) {
+      const skillList = skills.split(",").filter((s) => s.trim() !== "");
+
+      await db.delete(userSkills).where(eq(userSkills.userId, user.id));
+
+      if (skillList.length > 0) {
+        await db.insert(userSkills).values(
+          skillList.map((skill) => ({
+            userId: user.id,
+            skill: skill.trim(),
+          }))
+        );
+      }
+    }
+
+    revalidatePath("/profile");
+    return { success: true, message: "Profile updated successfully" };
+  } catch (error) {
+    return { success: false, message: "Failed to update profile" };
+  }
+};

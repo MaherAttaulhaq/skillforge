@@ -1,9 +1,13 @@
-import { sqliteTable, integer, text, primaryKey, real } from "drizzle-orm/sqlite-core";
+import {
+  sqliteTable,
+  integer,
+  text,
+  primaryKey,
+  real,
+} from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 import { AdapterAccount } from "next-auth/adapters";
 import { relations } from "drizzle-orm";
-
-
 
 /* ---------------- USERS ---------------- */
 export const users = sqliteTable("users", {
@@ -12,9 +16,35 @@ export const users = sqliteTable("users", {
   email: text("email").unique().notNull(),
   passwordHash: text("password_hash").notNull(),
   avatar: text("avatar"),
+  bio: text("bio"),
   role: text("role").$type<UserRole>().default("student"), // student | instructor | admin
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
+
+// Your existing userSkills table
+/* ---------------- USER SKILLS ---------------- */
+export const userSkills = sqliteTable("user_skills", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
+  skill: text("skill").notNull(),
+  level: text("level").default("beginner"), // beginner | intermediate | expert
+});
+
+// --- ADD THIS CODE ---
+// This defines the relationship for Drizzle's query builder
+
+export const usersRelations = relations(users, ({ many }) => ({
+  skills: many(userSkills),
+}));
+
+export const userSkillsRelations = relations(userSkills, ({ one }) => ({
+  user: one(users, {
+    fields: [userSkills.userId],
+    references: [users.id],
+  }),
+}));
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -87,17 +117,21 @@ export const purchases = sqliteTable("purchases", {
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
-export const users_courses = sqliteTable("users_courses", {
-  userId: integer("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  courseId: integer("course_id")
-    .notNull()
-    .references(() => courses.id, { onDelete: "cascade" }),
-  completedAt: integer("completed_at", { mode: "timestamp" }),
-}, (t) => ({
-  pk: primaryKey({ columns: [t.userId, t.courseId] }),
-}));
+export const users_courses = sqliteTable(
+  "users_courses",
+  {
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    courseId: integer("course_id")
+      .notNull()
+      .references(() => courses.id, { onDelete: "cascade" }),
+    completedAt: integer("completed_at", { mode: "timestamp" }),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.userId, t.courseId] }),
+  })
+);
 
 export const coursesRelations = relations(courses, ({ many }) => ({
   users: many(users_courses),
@@ -129,6 +163,15 @@ export const posts = sqliteTable("posts", {
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
+export const postsRelations = relations(posts, ({ one, many }) => ({
+  author: one(users, {
+    fields: [posts.authorId],
+    references: [users.id],
+  }),
+  comments: many(comments),
+  tags: many(posts_tags),
+}));
+
 /* ---------------- TAGS ---------------- */
 export const tags = sqliteTable("tags", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -137,14 +180,36 @@ export const tags = sqliteTable("tags", {
 
 export type Tag = typeof tags.$inferSelect;
 
-/* ---------------- POSTS_TAGS ---------------- */
-export const posts_tags = sqliteTable("posts_tags", {
-  postId: integer("post_id").references(() => posts.id).notNull(),
-  tagId: integer("tag_id").references(() => tags.id).notNull(),
-}, (table) => ({
-  pk: primaryKey(table.postId, table.tagId),
+export const tagsRelations = relations(tags, ({ many }) => ({
+  posts: many(posts_tags),
 }));
 
+/* ---------------- POSTS_TAGS ---------------- */
+export const posts_tags = sqliteTable(
+  "posts_tags",
+  {
+    postId: integer("post_id")
+      .references(() => posts.id)
+      .notNull(),
+    tagId: integer("tag_id")
+      .references(() => tags.id)
+      .notNull(),
+  },
+  (table) => ({
+    pk: primaryKey(table.postId, table.tagId),
+  })
+);
+
+export const postsTagsRelations = relations(posts_tags, ({ one }) => ({
+  post: one(posts, {
+    fields: [posts_tags.postId],
+    references: [posts.id],
+  }),
+  tag: one(tags, {
+    fields: [posts_tags.tagId],
+    references: [tags.id],
+  }),
+}));
 
 /* ---------------- COMMENTS ---------------- */
 export const comments = sqliteTable("comments", {
@@ -159,24 +224,43 @@ export const comments = sqliteTable("comments", {
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
+export const commentsRelations = relations(comments, ({ one }) => ({
+  post: one(posts, {
+    fields: [comments.postId],
+    references: [posts.id],
+  }),
+  author: one(users, {
+    fields: [comments.authorId],
+    references: [users.id],
+  }),
+}));
+
 /* ---------------- LIKES ---------------- */
-export const likes = sqliteTable("likes", {
+export const likes = sqliteTable(
+  "likes",
+  {
+    userId: integer("user_id")
+      .references(() => users.id)
+      .notNull(),
+    postId: integer("post_id")
+      .references(() => posts.id)
+      .notNull(),
+    createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.userId, table.postId] }),
+  })
+);
+
+/* ---------------- SHARES ---------------- */
+export const shares = sqliteTable("shares", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   userId: integer("user_id")
     .references(() => users.id)
     .notNull(),
   postId: integer("post_id")
     .references(() => posts.id)
     .notNull(),
-  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
-}, (table) => ({
-  pk: primaryKey({ columns: [table.userId, table.postId] }),
-}));
-
-/* ---------------- SHARES ---------------- */
-export const shares = sqliteTable("shares", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  userId: integer("user_id").references(() => users.id).notNull(),
-  postId: integer("post_id").references(() => posts.id).notNull(),
   platform: text("platform"),
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
@@ -204,23 +288,31 @@ export const lessons = sqliteTable("lessons", {
 });
 
 /* ---------------- ENROLLMENTS ---------------- */
-export const enrollments = sqliteTable("enrollments", {
-  userId: integer("user_id")
-    .references(() => users.id)
-    .notNull(),
-  courseId: integer("course_id")
-    .references(() => courses.id)
-    .notNull(),
-  enrolledAt: text("enrolled_at").default(sql`CURRENT_TIMESTAMP`),
-}, (table) => ({
-  pk: primaryKey({ columns: [table.userId, table.courseId] }),
-}));
+export const enrollments = sqliteTable(
+  "enrollments",
+  {
+    userId: integer("user_id")
+      .references(() => users.id)
+      .notNull(),
+    courseId: integer("course_id")
+      .references(() => courses.id)
+      .notNull(),
+    enrolledAt: text("enrolled_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.userId, table.courseId] }),
+  })
+);
 
 /* ---------------- LESSON PROGRESS ---------------- */
 export const lessonProgress = sqliteTable("lesson_progress", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  userId: integer("user_id").references(() => users.id).notNull(),
-  lessonId: integer("lesson_id").references(() => lessons.id).notNull(),
+  userId: integer("user_id")
+    .references(() => users.id)
+    .notNull(),
+  lessonId: integer("lesson_id")
+    .references(() => lessons.id)
+    .notNull(),
   isCompleted: integer("is_completed", { mode: "boolean" }).default(false),
   updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
 });
@@ -228,8 +320,12 @@ export const lessonProgress = sqliteTable("lesson_progress", {
 /* ---------------- COURSE REVIEWS ---------------- */
 export const reviews = sqliteTable("reviews", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  courseId: integer("course_id").references(() => courses.id).notNull(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  courseId: integer("course_id")
+    .references(() => courses.id)
+    .notNull(),
+  userId: integer("user_id")
+    .references(() => users.id)
+    .notNull(),
   rating: integer("rating").notNull(), // 1–5
   comment: text("comment"),
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
@@ -248,26 +344,24 @@ export const aiContent = sqliteTable("ai_content", {
 /* ---------------- NOTIFICATIONS ---------------- */
 export const notifications = sqliteTable("notifications", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: integer("user_id")
+    .references(() => users.id)
+    .notNull(),
   title: text("title").notNull(),
   message: text("message"),
   isRead: integer("is_read", { mode: "boolean" }).default(false),
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
-/* ---------------- USER SKILLS ---------------- */
-export const userSkills = sqliteTable("user_skills", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  userId: integer("user_id").references(() => users.id).notNull(),
-  skill: text("skill").notNull(),
-  level: text("level").default("beginner"), // beginner | intermediate | expert
-});
-
 /* ---------------- CERTIFICATES ---------------- */
 export const certificates = sqliteTable("certificates", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  userId: integer("user_id").references(() => users.id).notNull(),
-  courseId: integer("course_id").references(() => courses.id).notNull(),
+  userId: integer("user_id")
+    .references(() => users.id)
+    .notNull(),
+  courseId: integer("course_id")
+    .references(() => courses.id)
+    .notNull(),
   certificateUrl: text("certificate_url").notNull(),
   issueDate: text("issue_date").default(sql`CURRENT_TIMESTAMP`),
 });
@@ -313,7 +407,7 @@ export const accounts = sqliteTable("accounts", {
   id_token: text("id_token"),
   session_state: text("session_state"),
 });
- 
+
 // ---------------- SESSIONS ----------------
 export const sessions = sqliteTable("sessions", {
   sessionToken: text("session_token").notNull().primaryKey(),
@@ -324,10 +418,14 @@ export const sessions = sqliteTable("sessions", {
 });
 
 // ---------------- VERIFICATION TOKENS ----------------
-export const verificationTokens = sqliteTable("verification_tokens", {
-  identifier: text("identifier").notNull(),
-  token: text("token").notNull(),
-  expires: integer("expires", { mode: "timestamp_ms" }).notNull(),
-}, (table) => ({
-  pk: primaryKey({ columns: [table.identifier, table.token] }),
-}));
+export const verificationTokens = sqliteTable(
+  "verification_tokens",
+  {
+    identifier: text("identifier").notNull(),
+    token: text("token").notNull(),
+    expires: integer("expires", { mode: "timestamp_ms" }).notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.identifier, table.token] }),
+  })
+);

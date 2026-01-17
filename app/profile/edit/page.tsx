@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { users, userSkills } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { ProfileForm } from "./ProfileForm";
 import {
@@ -20,9 +20,18 @@ export default async function ProfileEditPage() {
 
   const user = await db.query.users.findFirst({
     where: eq(users.email, session.user.email),
+    with: {
+      skills: true,
+    },
   });
 
   if (!user) return redirect("/");
+
+  const userWithSkills = {
+    ...user,
+    // The form expects an array of strings
+    skills: user.skills.map((s) => s.skill),
+  };
 
   return (
     <div className="container mx-auto max-w-3xl py-10 px-4 sm:px-6 lg:px-8">
@@ -43,7 +52,7 @@ export default async function ProfileEditPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ProfileForm user={user} />
+          <ProfileForm user={userWithSkills} />
         </CardContent>
       </Card>
     </div>

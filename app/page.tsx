@@ -115,7 +115,7 @@ export default function Home() {
                     </p>
                   </div>
                 </div>
-                <div className="relative flex flex-col items-center gap-4 text-center md:items-center">
+                <div className="relative flex flex-col items-center gap-4 text-center md:items-start md:text-left">
                   <div className="z-10 flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-4 border-primary bg-background text-2xl font-bold text-primary">
                     2
                   </div>
@@ -126,7 +126,7 @@ export default function Home() {
                     </p>
                   </div>
                 </div>
-                <div className="relative flex flex-col items-center gap-4 text-center md:items-end md:text-right">
+                <div className="relative flex flex-col items-center gap-4 text-center md:items-start md:text-left">
                   <div className="z-10 flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-4 border-primary bg-background text-2xl font-bold text-primary">
                     3
                   </div>
