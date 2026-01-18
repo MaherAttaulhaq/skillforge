@@ -1,157 +1,125 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
-import { submitAction } from "../actions/form";
-import { users } from "@/db/schema";
-import { InferSelectModel } from "drizzle-orm";
-import { useFormStatus } from "react-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
+import { updateProfile } from "./actions";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { Camera } from "lucide-react";
 
-type User = InferSelectModel<typeof users>;
+export default function ProfileForm({ user }: { user: any }) {
+  const [loading, setLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const [preview, setPreview] = useState(user.image);
+  const router = useRouter();
 
-const initialState = {
-  message: "",
-  success: false,
-};
-
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" disabled={pending} className="w-full">
-      {pending ? "Saving..." : "Save Changes"}
-    </Button>
-  );
-}
-
-export function ProfileForm({
-  user,
-}: {
-  user: (User & { skills: string[] }) | undefined;
-}) {
-  const [state, formAction] = useActionState(submitAction, initialState);
-  const [skills, setSkills] = useState<string[]>(user?.skills || []);
-  const [currentSkill, setCurrentSkill] = useState("");
-
-  useEffect(() => {
-    setSkills(user?.skills || []);
-  }, [user?.skills]);
-
-  const addSkill = () => {
-    if (currentSkill.trim()) {
-      if (!skills.includes(currentSkill.trim())) {
-        setSkills([...skills, currentSkill.trim()]);
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 1024 * 1024) {
+        toast.error("Image size should be less than 1MB");
+        return;
       }
-      setCurrentSkill("");
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      addSkill();
-    }
-  };
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
 
-  const removeSkill = (skillToRemove: string) => {
-    setSkills(skills.filter((skill) => skill !== skillToRemove));
-  };
-
-  useEffect(() => {
-    if (state?.success) {
-      toast.success(state.message);
-    } else if (state?.message) {
-      toast.error(state.message);
+    const formData = new FormData(e.currentTarget);
+    if (preview && preview !== user.image) {
+      formData.set("image", preview);
+    } else {
+      formData.delete("image");
     }
-  }, [state]);
+
+    const result = await updateProfile(formData);
+
+    if (result.success) {
+      toast.success("Profile updated successfully");
+      startTransition(() => {
+        router.refresh();
+        router.push("/profile");
+      });
+    } else {
+      toast.error(result.message || "Something went wrong");
+    }
+    setLoading(false);
+  };
 
   return (
-    <form action={formAction} className="space-y-6">
-      <div>
-        <Label htmlFor="name" className="text-gray-700 dark:text-gray-300">
-          Name
-        </Label>
-        <Input
-          id="name"
-          name="name"
-          defaultValue={user?.name ?? ""}
-          className="mt-1 block w-full"
-        />
-      </div>
-      <div>
-        <Label htmlFor="bio" className="text-gray-700 dark:text-gray-300">
-          Bio
-        </Label>
-        <Textarea
-          id="bio"
-          name="bio"
-          defaultValue={(user as any)?.bio ?? ""}
-          className="mt-1 block w-full"
-          placeholder="Tell us a little about yourself"
-        />
-      </div>
-      <div className="flex items-center gap-4">
-        <Avatar className="h-16 w-16">
-          <AvatarImage src={user?.image || undefined} />
-          <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
-        </Avatar>
-        <div className="flex-1">
-          <Label htmlFor="avatar" className="text-gray-700 dark:text-gray-300">
-            Avatar
-          </Label>
-          <Input
-            id="avatar"
-            name="avatar"
+    <form onSubmit={handleSubmit} className="space-y-8">
+      <div className="flex flex-col items-center gap-4">
+        <div className="relative group cursor-pointer">
+          <Avatar className="h-32 w-32 border-4 border-background shadow-xl">
+            <AvatarImage src={preview || ""} />
+            <AvatarFallback className="text-4xl">
+              {user.name?.charAt(0)}
+            </AvatarFallback>
+          </Avatar>
+          <label
+            htmlFor="image-upload"
+            className="absolute inset-0 flex items-center justify-center bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+          >
+            <Camera className="h-8 w-8" />
+          </label>
+          <input
+            id="image-upload"
             type="file"
             accept="image/*"
-            className="mt-1 block w-full"
+            className="hidden"
+            onChange={handleImageChange}
           />
         </div>
-      </div>
-      <div>
-        <Label htmlFor="skills" className="text-gray-700 dark:text-gray-300">
-          Skills
-        </Label>
-        <div className="flex flex-wrap gap-2 mb-3 mt-2">
-          {skills.map((skill, index) => (
-            <Badge key={index} variant="secondary" className="gap-1 pr-1">
-              {skill}
-              <button
-                type="button"
-                onClick={() => removeSkill(skill)}
-                className="hover:bg-muted rounded-full p-0.5 transition-colors"
-              >
-                <X className="h-3 w-3" />
-                <span className="sr-only">Remove {skill}</span>
-              </button>
-            </Badge>
-          ))}
-        </div>
-        <div className="flex gap-2">
-          <Input
-            id="skill-input"
-            value={currentSkill}
-            onChange={(e) => setCurrentSkill(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Type a skill and press Enter"
-            className="mt-1 block w-full"
-          />
-          <Button type="button" variant="outline" onClick={addSkill}>
-            Add
-          </Button>
-        </div>
-        <input type="hidden" name="skills" value={skills.join(",")} />
-        <p className="text-sm text-muted-foreground mt-1">
-          Type a skill and press Enter or click Add.
+        <p className="text-sm text-muted-foreground">
+          Click to upload new picture
         </p>
       </div>
-      <SubmitButton />
+
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <label
+            htmlFor="name"
+            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+          >
+            Full Name
+          </label>
+          <Input id="name" name="name" defaultValue={user.name} required />
+        </div>
+
+        <div className="space-y-2">
+          <label
+            htmlFor="bio"
+            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+          >
+            Bio
+          </label>
+          <textarea
+            id="bio"
+            name="bio"
+            defaultValue={user.bio}
+            placeholder="Tell us about yourself"
+            className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          />
+        </div>
+      </div>
+
+      <div className="flex gap-4">
+        <Button type="submit" disabled={loading || isPending}>
+          {loading ? "Saving..." : "Save Changes"}
+        </Button>
+        <Button type="button" variant="outline" onClick={() => router.back()}>
+          Cancel
+        </Button>
+      </div>
     </form>
   );
 }

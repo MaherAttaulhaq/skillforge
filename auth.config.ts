@@ -9,9 +9,16 @@ export const authConfig = {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
       const isApiRoute = nextUrl.pathname.startsWith("/api");
-      const paths = ["/dashboard", "/api", "/profile", "/teacher", "/courses", "/courses/create"];
+      const paths = [
+        "/dashboard",
+        "/api",
+        "/profile",
+        "/teacher",
+        "/courses",
+        "/courses/create",
+      ];
       const isProtectedPage = paths.some((path) =>
-        nextUrl.pathname.startsWith(path)
+        nextUrl.pathname.startsWith(path),
       );
 
       // Excluded routes
@@ -32,7 +39,7 @@ export const authConfig = {
           // For API routes, return a 401 JSON response
           return NextResponse.json(
             { message: "Unauthorized" },
-            { status: 401 }
+            { status: 401 },
           );
         } else {
           // For page routes, redirect to login
