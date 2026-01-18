@@ -31,56 +31,93 @@ export default function CourseDetails({
   params: params;
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
-  const [course, setCourse] = useState<string | null>(null);
+  const [course, setCourse] = useState<any | null>(null);
   const [modulesWithLessons, setModulesWithLessons] = useState<any[]>([]);
+  const [isEnrolled, setIsEnrolled] = useState(false);
 
   const [userProgress, setUserProgress] = useState<any[]>([]);
   const [relatedCourses, setRelatedCourses] = useState<any[]>([]);
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
+    const signal = controller.signal;
+
     const loadData = async () => {
       const { slug } = params;
       const id = slug && slug[0];
 
-      if (!id) return;
+      if (!id) {
+        setError("Invalid course ID");
+        setLoading(false);
+        return;
+      }
 
       try {
         const [courseRes, sessionRes] = await Promise.all([
-          fetch(`/api/courses/${id}`),
-          fetch("/api/auth/session"),
+          fetch(`/api/courses/${id}`, { signal }),
+          fetch("/api/auth/session", { signal }),
         ]);
+
+        if (!courseRes.ok) {
+          throw new Error(
+            courseRes.status === 404
+              ? "Course not found"
+              : "Failed to load course data",
+          );
+        }
 
         const courseData = await courseRes.json();
         const sessionData = await sessionRes.json();
 
+        if (!courseData?.course) {
+          throw new Error("Course data is missing");
+        }
+
         setCourse(courseData.course);
-        setModulesWithLessons(courseData.modulesWithLessons);
-        setUserProgress(courseData.userProgress);
-        setRelatedCourses(courseData.relatedCourses);
-        setSession(sessionData?.session);
-      } catch (error) {
-        console.error("Error loading data:", error);
+        setModulesWithLessons(courseData.modulesWithLessons || []);
+        setIsEnrolled(!!courseData.isEnrolled);
+        setUserProgress(courseData.userProgress || []);
+        setRelatedCourses(courseData.relatedCourses || []);
+        setSession(sessionData);
+      } catch (error: any) {
+        if (error.name !== "AbortError") {
+          console.error("Error loading data:", error);
+          setError(error.message || "An unexpected error occurred");
+        }
       } finally {
-        setLoading(false);
+        if (!signal.aborted) {
+          setLoading(false);
+        }
       }
     };
 
     loadData();
+    return () => controller.abort();
   }, [params]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
-  if (!course) {
+  if (error || !course) {
     return (
       <div className="container mx-auto p-4 sm:p-6 lg:p-8">
         <div className="text-center py-12">
-          <h1 className="text-2xl font-bold">Course not found</h1>
+          <h1 className="text-2xl font-bold text-destructive">
+            {error || "Course not found"}
+          </h1>
+          <p className="text-muted-foreground mt-2 mb-6">
+            We couldn&apos;t load the course you&apos;re looking for.
+          </p>
           <Link href="/courses">
-            <Button className="mt-4">Back to Courses</Button>
+            <Button>Back to Courses</Button>
           </Link>
         </div>
       </div>
@@ -102,6 +139,8 @@ export default function CourseDetails({
     modulesWithLessons[0]?.lessons[0];
 
   const user = session?.user;
+  const isFirstLesson =
+    currentLesson?.id === modulesWithLessons[0]?.lessons[0]?.id;
 
   return (
     <div className="container mx-auto p-4 sm:p-6 lg:p-8">
@@ -143,20 +182,28 @@ export default function CourseDetails({
               )}
             </div>
             <div className="rounded-xl overflow-hidden shadow-lg">
-              {!user ? (
+              {(!user || !isEnrolled) && !isFirstLesson ? (
                 <div className="flex flex-col items-center justify-center aspect-video bg-slate-100 text-center p-6">
                   <div className="bg-slate-200 p-4 rounded-full mb-4">
                     <Lock className="h-8 w-8 text-slate-500" />
                   </div>
                   <h3 className="text-xl font-bold text-slate-800 mb-2">
-                    This lesson is locked
+                    {user ? "Enrollment Required" : "This lesson is locked"}
                   </h3>
                   <p className="text-slate-600 mb-6">
-                    Please log in to access this course content.
+                    {user
+                      ? "You must be enrolled in this course to view this lesson."
+                      : "Please log in to access this course content."}
                   </p>
-                  <Link href="/api/auth/signin">
-                    <Button>Log In to Continue</Button>
-                  </Link>
+                  {user ? (
+                    <Link href={`/checkout/${course.id}`}>
+                      <Button>Enroll Now</Button>
+                    </Link>
+                  ) : (
+                    <Link href="/api/auth/signin">
+                      <Button>Log In to Continue</Button>
+                    </Link>
+                  )}
                 </div>
               ) : currentLesson?.videoUrl ? (
                 <div className="relative aspect-video">
@@ -225,7 +272,7 @@ export default function CourseDetails({
                       <ul className="flex flex-col gap-2 mt-2">
                         {module.lessons.map((lesson: any) => {
                           const isCompleted = !!userProgress.find(
-                            (p) => p.lessonId === lesson.id
+                            (p) => p.lessonId === lesson.id,
                           )?.isCompleted;
 
                           return (
