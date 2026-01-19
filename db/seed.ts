@@ -18,6 +18,7 @@ import {
   comments,
   posts_tags,
   tags,
+  companies,
 } from "./schema";
 
 async function seed() {
@@ -30,6 +31,7 @@ async function seed() {
   await db.delete(comments);
   await db.delete(posts);
   await db.delete(jobs);
+  await db.delete(companies);
   await db.delete(certificates);
   await db.delete(userSkills);
   await db.delete(notifications);
@@ -233,10 +235,48 @@ async function seed() {
     },
   ]);
 
+  /* ---------------- COMPANIES ---------------- */
+  const companyData = await db
+    .insert(companies)
+    .values([
+      {
+        name: "Stripe",
+        location: "San Francisco, CA",
+        logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuBOMUVhL9_7VevGCdmL2pS29udklZURm9267i2Z1FsJqVsdWxySZtMxyXkSULSsQVZKX8tScBsLe80P-tHivpGDqFWdKq3ocwLbCcpuaGcghyKacQtsgpbPZkH-rtZaJbcYDzZcmvJzfMTYmE3QkL3AJO186iAfKP2nlKnk3ALuUoYmwwXaiERPW7I7SMplAlChdt8aVtkmq-ewQmgqsS1DH7Eh-r6v5Z-iYh7CXekMFZPdYyea4Vlb-xdL0gvBaQKCHDjL2gPu5_g",
+        description: "Stripe is a financial infrastructure platform for the internet. Millions of companies of all sizes—from startups to Fortune 500s—use Stripe's software and APIs to accept payments, send payouts, and manage their businesses online.",
+        website: "https://stripe.com",
+      },
+      {
+        name: "Google",
+        location: "Remote",
+        logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuCsiNkEz71PbqjsZTdRwqiO1e8r5ZRt-E0CXu7RZ9E2blpHawycMDxUB5T6RcZHRqoWf8GrWU9NxXr3YIX9yEozT2l87cw8ve-1lPPEYLjXxRN95VCh6LwhVnNldTRhXoy9QeY-jUnEjItuF94fHmQ_QpbDxFX86lrCeafDiI3EIZs2fxAXrSXsjDJ0KN0mysDlCOgMhOtwxIgfFHxmbGWtk-1HfjuqmT2-HqaR5w0f7oLHJoW6H1zArqjJZIbJZBiWAC1fCa9dOw0",
+        description: "Google's mission is to organize the world's information and make it universally accessible and useful. Our products and services are used by billions of people around the world.",
+        website: "https://google.com",
+      },
+      {
+        name: "Figma",
+        location: "New York, NY",
+        logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuD_FsaXlvV46aVGminWUerEEDcDvkCg9tu1PcPWguA41pN3H1nYHHF_NCD0rw-Wmxf0jNVvULXS7ANC8Ba-oME_jpfN1_3ByzMtQxMU7HQzMvnPmepQP-NMq_9liYT6zlfWS95v65DLApw-qYSuwknZC5_4JrbSlWnX4N-dTQDQeThX7DgXqUskOq6J3N97Kax1nXqpeZljWydvP5R6fUeR42xx3oN6RXzaNuT-MKiJIL__c37-hZhmLOYrbISz5YLoIUyDwNF0lPI",
+        description: "Figma is a design platform for teams who build products together. Born on the Web, Figma helps teams brainstorm, design, and build better products—from start to finish.",
+        website: "https://figma.com",
+      },
+      {
+        name: "Shopify",
+        location: "Hybrid",
+        logo: "https://lh3.googleusercontent.com/aida-public/AB6AXuBChPPlG3G5-1Bh3p4AVclBznyOSYrowStl_FwRpgj7rk2_eyNVF3Gid5XP6PzTf0WfWQibgIZnhGIFq6_84kf3fvyEljcehvtFkjDx6CA230NZrH8a7BaBG7cKBgG-0YOCij735NGibnFUM9u5zeuoUyozPHyvn0-dtaMagPAsMGvNE4iX7OD5TQALFvv3kN2IfOVWxkPyQAVHnaX0XMNcg3lZSlZm0O40ZxiZDCQTHFap8r_pgW4rkX4C7_PF4YFL58nRBpuHgVM",
+        description: "Shopify is a leading global commerce company, providing trusted tools to start, grow, market, and manage a retail business of any size.",
+        website: "https://shopify.com",
+      },
+    ])
+    .returning();
+
+  const [stripe, google, figma, shopify] = companyData;
+
   /* ---------------- JOBS ---------------- */
   await db.insert(jobs).values([
     {
       title: "Senior Frontend Engineer",
+      companyId: stripe.id,
       company: "Stripe",
       location: "San Francisco, CA",
       match: 92,
@@ -256,6 +296,7 @@ async function seed() {
     },
     {
       title: "Product Manager, AI",
+      companyId: google.id,
       company: "Google",
       location: "Remote",
       match: 85,
@@ -275,6 +316,7 @@ async function seed() {
     },
     {
       title: "UX/UI Designer",
+      companyId: figma.id,
       company: "Figma",
       location: "New York, NY",
       match: 81,
@@ -294,6 +336,7 @@ async function seed() {
     },
     {
       title: "Data Scientist",
+      companyId: shopify.id,
       company: "Shopify",
       location: "Hybrid",
       match: 78,

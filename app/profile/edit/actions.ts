@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@/auth";
+import { auth, signOut } from "@/auth";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -14,7 +14,11 @@ export async function updateProfile(formData: FormData) {
 
   const name = formData.get("name") as string;
   const bio = formData.get("bio") as string;
-  const image = formData.get("image") as string;
+  const imageEntry = formData.get("image");
+  const image =
+    typeof imageEntry === "string" && imageEntry.length > 0
+      ? imageEntry
+      : undefined;
 
   try {
     await db
@@ -33,4 +37,20 @@ export async function updateProfile(formData: FormData) {
     console.error("Profile update error:", error);
     return { success: false, message: "Failed to update profile" };
   }
+}
+
+export async function deleteAccount() {
+  const session = await auth();
+  if (!session?.user?.email) {
+    return { success: false, message: "Unauthorized" };
+  }
+
+  try {
+    await db.delete(users).where(eq(users.email, session.user.email));
+  } catch (error) {
+    console.error("Delete account error:", error);
+    return { success: false, message: "Failed to delete account" };
+  }
+
+  await signOut({ redirectTo: "/" });
 }

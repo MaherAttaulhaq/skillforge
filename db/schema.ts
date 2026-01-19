@@ -130,7 +130,7 @@ export const users_courses = sqliteTable(
   },
   (t) => ({
     pk: primaryKey({ columns: [t.userId, t.courseId] }),
-  })
+  }),
 );
 
 export const coursesRelations = relations(courses, ({ many }) => ({
@@ -197,7 +197,7 @@ export const posts_tags = sqliteTable(
   },
   (table) => ({
     pk: primaryKey(table.postId, table.tagId),
-  })
+  }),
 );
 
 export const postsTagsRelations = relations(posts_tags, ({ one }) => ({
@@ -249,7 +249,7 @@ export const likes = sqliteTable(
   },
   (table) => ({
     pk: primaryKey({ columns: [table.userId, table.postId] }),
-  })
+  }),
 );
 
 /* ---------------- SHARES ---------------- */
@@ -301,7 +301,7 @@ export const enrollments = sqliteTable(
   },
   (table) => ({
     pk: primaryKey({ columns: [table.userId, table.courseId] }),
-  })
+  }),
 );
 
 /* ---------------- LESSON PROGRESS ---------------- */
@@ -366,10 +366,22 @@ export const certificates = sqliteTable("certificates", {
   issueDate: text("issue_date").default(sql`CURRENT_TIMESTAMP`),
 });
 
+/* ---------------- COMPANIES ---------------- */
+export const companies = sqliteTable("companies", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  location: text("location").notNull(),
+  logo: text("logo").notNull(),
+  description: text("description"),
+  website: text("website"),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
 /* ---------------- JOBS ---------------- */
 export const jobs = sqliteTable("jobs", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   title: text("title").notNull(),
+  companyId: integer("company_id").references(() => companies.id),
   company: text("company").notNull(),
   location: text("location").notNull(),
   match: integer("match"),
@@ -389,6 +401,17 @@ export const jobs = sqliteTable("jobs", {
   deletedAt: text("deleted_at"),
   isDeleted: integer("is_deleted", { mode: "boolean" }).default(false),
 });
+
+export const companiesRelations = relations(companies, ({ many }) => ({
+  jobs: many(jobs),
+}));
+
+export const jobsRelations = relations(jobs, ({ one }) => ({
+  company: one(companies, {
+    fields: [jobs.companyId],
+    references: [companies.id],
+  }),
+}));
 
 // ---------------- ACCOUNTS ----------------
 export const accounts = sqliteTable("accounts", {
@@ -427,5 +450,5 @@ export const verificationTokens = sqliteTable(
   },
   (table) => ({
     pk: primaryKey({ columns: [table.identifier, table.token] }),
-  })
+  }),
 );

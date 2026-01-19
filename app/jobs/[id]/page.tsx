@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   ArrowRight,
@@ -11,27 +11,41 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { db } from "@/db";
-import { jobs } from "@/db/schema";
+import { jobs, companies } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { auth } from "@/auth";
+import { notFound } from "next/navigation";
 
-interface params {
-  id?: number;
+interface Params {
+  id: string;
 }
 
 export default async function JobDetailPage({
   params,
 }: {
-  params: Promise<params>;
+  params: Promise<Params>;
 }) {
   const { id } = await params;
+  const jobId = parseInt(id);
+
+  if (isNaN(jobId)) {
+    notFound();
+  }
+
   const session = await auth();
-  const job = db
-    .select()
-    .from(jobs)
-    .where(eq(jobs.id, Number(id)))
-    .get();
-  console.log(job);
+
+  // Fetch the job
+  const job = await db.select().from(jobs).where(eq(jobs.id, jobId)).get();
+
+  if (!job) {
+    notFound();
+  }
+
+  // Fetch the company associated with the job
+  const company = job.companyId
+    ? await db.select().from(companies).where(eq(companies.id, job.companyId)).get()
+    : null;
+
   return (
     <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
       {/* Breadcrumbs */}
@@ -51,7 +65,7 @@ export default async function JobDetailPage({
         </Link>
         <span className="text-muted-foreground">/</span>
         <span className="text-foreground font-medium">
-          {job?.title} at {job?.company}
+          {job.title} at {company?.name || job.company}
         </span>
       </div>
 
@@ -63,15 +77,17 @@ export default async function JobDetailPage({
             <div className="flex gap-4 items-center">
               <div className="bg-white dark:bg-slate-800 rounded-lg min-h-20 w-20 p-2 border">
                 <img
-                  alt={`${job?.company} Logo`}
+                  alt={`${company?.name || job.company} Logo`}
                   className="object-contain w-full h-full"
-                  src={job?.logo}
+                  src={company?.logo || job.logo}
                 />
               </div>
               <div className="flex flex-col">
-                <p className="text-xl font-bold">{job?.company}</p>
+                <p className="text-xl font-bold">
+                  {company?.name || job.company}
+                </p>
                 <p className="text-base text-muted-foreground">
-                  {job?.location}
+                  {company?.location || job.location}
                 </p>
               </div>
             </div>
@@ -79,21 +95,21 @@ export default async function JobDetailPage({
             {/* Job Title & Salary */}
             <div className="flex flex-col gap-2">
               <h1 className="text-3xl font-black leading-tight tracking-tighter">
-                {job?.title}
+                {job.title}
               </h1>
               <p className="text-lg text-muted-foreground">
-                {job?.salary || "Salary not specified"}
+                {job.salary || "Salary not specified"}
               </p>
             </div>
 
             {/* Job Type Badges */}
             <div className="flex gap-2 flex-wrap">
-              {job?.type && (
+              {job.type && (
                 <Badge variant="secondary" className="h-8 px-3">
                   {job.type}
                 </Badge>
               )}
-              {job?.workMode && (
+              {job.workMode && (
                 <Badge variant="secondary" className="h-8 px-3">
                   {job.workMode}
                 </Badge>
@@ -102,10 +118,29 @@ export default async function JobDetailPage({
 
             {/* Primary Action Buttons */}
             <div className="flex flex-col sm:flex-row lg:flex-col gap-3">
-              <Button disabled={!session} className="w-full h-12 text-base font-bold gap-2">
-                <ArrowRight className="h-5 w-5" />
-                {session ? "Apply Now" : "Login to Apply"}
-              </Button>
+              {session ? (
+                job.companyId ? (
+                  <Link href={`/company/${job.companyId}`} className="w-full">
+                    <Button className="w-full h-12 text-base font-bold gap-2">
+                      <ArrowRight className="h-5 w-5" />
+                      Apply Now
+                    </Button>
+                  </Link>
+                ) : (
+                  <Button className="w-full h-12 text-base font-bold gap-2">
+                    <ArrowRight className="h-5 w-5" />
+                    Apply Now
+                  </Button>
+                )
+              ) : (
+                <Button
+                  disabled
+                  className="w-full h-12 text-base font-bold gap-2"
+                >
+                  <ArrowRight className="h-5 w-5" />
+                  Login to Apply
+                </Button>
+              )}
               <Button
                 disabled={!session}
                 variant="outline"
@@ -128,7 +163,7 @@ export default async function JobDetailPage({
                   </p>
                   <p className="text-sm text-muted-foreground">
                     You&apos;re a{" "}
-                    <span className="font-bold">{job?.match}% match</span> for
+                    <span className="font-bold">{job.match}% match</span> for
                     this role.
                   </p>
                 </div>
@@ -140,13 +175,13 @@ export default async function JobDetailPage({
               <CardContent className="p-5 flex flex-col gap-4">
                 <h3 className="text-lg font-bold">Key Information</h3>
                 <ul className="space-y-3 text-muted-foreground">
-                  {job?.experience && (
+                  {job.experience && (
                     <li className="flex items-center gap-3">
                       <Briefcase className="h-5 w-5 text-primary shrink-0" />
                       <span>{job.experience} Experience</span>
                     </li>
                   )}
-                  {job?.type && (
+                  {job.type && (
                     <li className="flex items-center gap-3">
                       <Users className="h-5 w-5 text-primary shrink-0" />
                       <span>{job.type}</span>
@@ -154,7 +189,7 @@ export default async function JobDetailPage({
                   )}
                   <li className="flex items-center gap-3">
                     <Calendar className="h-5 w-5 text-primary shrink-0" />
-                    <span>{job?.posted}</span>
+                    <span>{job.posted}</span>
                   </li>
                 </ul>
               </CardContent>
@@ -169,21 +204,21 @@ export default async function JobDetailPage({
             <Card>
               <CardContent className="p-6 md:p-8">
                 <div className="prose prose-slate dark:prose-invert max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-a:text-primary hover:prose-a:underline">
-                  {job?.description && (
+                  {job.description && (
                     <>
                       <h3>About the Role</h3>
                       <p>{job.description}</p>
                     </>
                   )}
                   <br />
-                  {job?.requirements && (
+                  {job.requirements && (
                     <>
                       <h4>Requirements</h4>
                       <p>{job.requirements}</p>
                     </>
                   )}
                   <br />
-                  {job?.benefits && (
+                  {job.benefits && (
                     <>
                       <h4>Benefits</h4>
                       <p>{job.benefits}</p>
@@ -194,12 +229,12 @@ export default async function JobDetailPage({
             </Card>
 
             {/* Skills Required Card */}
-            {job?.tags && (
+            {job.tags && (
               <Card>
                 <CardContent className="p-6 md:p-8">
                   <h3 className="text-xl font-bold mb-4">Skills Required</h3>
                   <div className="flex flex-wrap gap-3">
-                    {job.tags.split(',').map((skill) => (
+                    {job.tags.split(",").map((skill) => (
                       <Badge
                         key={skill}
                         className="bg-accent/20 text-accent-800 dark:bg-accent/10 dark:text-accent hover:bg-accent/30 px-4 py-1.5 text-sm font-medium"
@@ -211,8 +246,6 @@ export default async function JobDetailPage({
                 </CardContent>
               </Card>
             )}
-
-
           </div>
         </div>
       </div>

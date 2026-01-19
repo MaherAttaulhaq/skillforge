@@ -179,7 +179,11 @@ export default async function ProfilePage({
     <div className="container mx-auto px-4 py-8 max-w-5xl">
       <div className="flex flex-col md:flex-row gap-8 items-start mb-8">
         <Avatar className="h-32 w-32 border-4 border-background shadow-xl">
-          <AvatarImage src={user.image || ""} alt={user.name || ""} />
+          <AvatarImage
+            src={user.image || ""}
+            alt={user.name || ""}
+            className="object-cover"
+          />
           <AvatarFallback className="text-4xl">
             {user.name?.charAt(0)}
           </AvatarFallback>
