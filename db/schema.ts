@@ -402,6 +402,62 @@ export const jobs = sqliteTable("jobs", {
   isDeleted: integer("is_deleted", { mode: "boolean" }).default(false),
 });
 
+/* ---------------- SAVED JOBS ---------------- */
+export const savedJobs = sqliteTable(
+  "saved_jobs",
+  {
+    userId: integer("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    jobId: integer("job_id")
+      .references(() => jobs.id, { onDelete: "cascade" })
+      .notNull(),
+    savedAt: text("saved_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.userId, table.jobId] }),
+  }),
+);
+
+export const savedJobsRelations = relations(savedJobs, ({ one }) => ({
+  user: one(users, {
+    fields: [savedJobs.userId],
+    references: [users.id],
+  }),
+  job: one(jobs, {
+    fields: [savedJobs.jobId],
+    references: [jobs.id],
+  }),
+}));
+
+/* ---------------- APPLICATIONS ---------------- */
+export const applications = sqliteTable(
+  "applications",
+  {
+    userId: integer("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    jobId: integer("job_id")
+      .references(() => jobs.id, { onDelete: "cascade" })
+      .notNull(),
+    appliedAt: text("applied_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.userId, table.jobId] }),
+  }),
+);
+
+export const applicationsRelations = relations(applications, ({ one }) => ({
+  user: one(users, {
+    fields: [applications.userId],
+    references: [users.id],
+  }),
+  job: one(jobs, {
+    fields: [applications.jobId],
+    references: [jobs.id],
+  }),
+}));
+
 export const companiesRelations = relations(companies, ({ many }) => ({
   jobs: many(jobs),
 }));

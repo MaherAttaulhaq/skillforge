@@ -19,6 +19,8 @@ import {
   posts_tags,
   tags,
   companies,
+  savedJobs,
+  applications,
 } from "./schema";
 
 async function seed() {
@@ -26,6 +28,8 @@ async function seed() {
   console.log("🌱 Seeding SkillForge...");
 
   // Clear existing data
+  await db.delete(applications);
+  await db.delete(savedJobs);
   await db.delete(posts_tags);
   await db.delete(tags);
   await db.delete(comments);
@@ -273,7 +277,7 @@ async function seed() {
   const [stripe, google, figma, shopify] = companyData;
 
   /* ---------------- JOBS ---------------- */
-  await db.insert(jobs).values([
+  const jobsData = await db.insert(jobs).values([
     {
       title: "Senior Frontend Engineer",
       companyId: stripe.id,
@@ -354,6 +358,15 @@ async function seed() {
       benefits:
         "Flexible work arrangements, professional development opportunities, and a collaborative team culture.",
     },
+  ]).returning();
+
+  const [stripeJob, googleJob, figmaJob, shopifyJob] = jobsData;
+
+  /* ---------------- APPLICATIONS ---------------- */
+  await db.insert(applications).values([
+    { userId: ali.id, jobId: stripeJob.id },
+    { userId: ali.id, jobId: googleJob.id },
+    { userId: sara.id, jobId: figmaJob.id },
   ]);
 
   /* ---------------- POSTS ---------------- */

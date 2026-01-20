@@ -8,13 +8,16 @@ import {
   Briefcase,
   Users,
   Calendar,
+  Check,
 } from "lucide-react";
 import Link from "next/link";
 import { db } from "@/db";
-import { jobs, companies } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { jobs, savedJobs, applications } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 import { auth } from "@/auth";
 import { notFound } from "next/navigation";
+import { revalidatePath } from "next/cache";
+import { ApplyButton } from "./apply-button";
 
 interface Params {
   id: string;
@@ -41,10 +44,57 @@ export default async function JobDetailPage({
     notFound();
   }
 
-  // Fetch the company associated with the job
-  const company = job.companyId
-    ? await db.select().from(companies).where(eq(companies.id, job.companyId)).get()
-    : null;
+  let isSaved = false;
+  let isApplied = false;
+  if (session?.user?.id) {
+    const userId = parseInt(session.user.id);
+    const saved = await db
+      .select()
+      .from(savedJobs)
+      .where(
+        and(
+          eq(savedJobs.userId, userId),
+          eq(savedJobs.jobId, jobId),
+        ),
+      )
+      .get();
+    isSaved = !!saved;
+
+    const application = await db
+      .select()
+      .from(applications)
+      .where(and(eq(applications.userId, userId), eq(applications.jobId, jobId)))
+      .get();
+    isApplied = !!application;
+  }
+
+  async function toggleSaveJob() {
+    "use server";
+    if (!session?.user?.id) return;
+
+    const userId = parseInt(session.user.id);
+
+    if (isSaved) {
+      await db
+        .delete(savedJobs)
+        .where(and(eq(savedJobs.userId, userId), eq(savedJobs.jobId, jobId)));
+    } else {
+      await db.insert(savedJobs).values({ userId, jobId });
+    }
+    revalidatePath(`/jobs/${id}`);
+  }
+
+  async function applyToJob() {
+    "use server";
+    if (!session?.user?.id) return;
+    
+    await db.insert(applications).values({
+      userId: parseInt(session.user.id),
+      jobId,
+    });
+
+    revalidatePath(`/jobs/${id}`);
+  }
 
   return (
     <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
@@ -65,7 +115,7 @@ export default async function JobDetailPage({
         </Link>
         <span className="text-muted-foreground">/</span>
         <span className="text-foreground font-medium">
-          {job.title} at {company?.name || job.company}
+          {job.title} at {job.company}
         </span>
       </div>
 
@@ -77,17 +127,15 @@ export default async function JobDetailPage({
             <div className="flex gap-4 items-center">
               <div className="bg-white dark:bg-slate-800 rounded-lg min-h-20 w-20 p-2 border">
                 <img
-                  alt={`${company?.name || job.company} Logo`}
+                  alt={`${job.company} Logo`}
                   className="object-contain w-full h-full"
-                  src={company?.logo || job.logo}
+                  src={job.logo}
                 />
               </div>
               <div className="flex flex-col">
-                <p className="text-xl font-bold">
-                  {company?.name || job.company}
-                </p>
+                <p className="text-xl font-bold">{job.company}</p>
                 <p className="text-base text-muted-foreground">
-                  {company?.location || job.location}
+                  {job.location}
                 </p>
               </div>
             </div>
@@ -119,19 +167,7 @@ export default async function JobDetailPage({
             {/* Primary Action Buttons */}
             <div className="flex flex-col sm:flex-row lg:flex-col gap-3">
               {session ? (
-                job.companyId ? (
-                  <Link href={`/company/${job.companyId}`} className="w-full">
-                    <Button className="w-full h-12 text-base font-bold gap-2">
-                      <ArrowRight className="h-5 w-5" />
-                      Apply Now
-                    </Button>
-                  </Link>
-                ) : (
-                  <Button className="w-full h-12 text-base font-bold gap-2">
-                    <ArrowRight className="h-5 w-5" />
-                    Apply Now
-                  </Button>
-                )
+                <ApplyButton isApplied={isApplied} applyAction={applyToJob} />
               ) : (
                 <Button
                   disabled
@@ -141,14 +177,18 @@ export default async function JobDetailPage({
                   Login to Apply
                 </Button>
               )}
-              <Button
-                disabled={!session}
-                variant="outline"
-                className="w-full h-12 text-base font-bold gap-2 border-2"
-              >
-                <Bookmark className="h-5 w-5" />
-                Save Job
-              </Button>
+              <form action={toggleSaveJob} className="w-full">
+                <Button
+                  disabled={!session}
+                  variant="outline"
+                  className="w-full h-12 text-base font-bold gap-2 border-2"
+                >
+                  <Bookmark
+                    className={`h-5 w-5 ${isSaved ? "fill-current" : ""}`}
+                  />
+                  {isSaved ? "Saved" : "Save Job"}
+                </Button>
+              </form>
             </div>
 
             {/* AI Match Card */}

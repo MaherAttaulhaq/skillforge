@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Upload, FileText, ArrowUpRight } from "lucide-react";
+import { Upload, FileText, ArrowUpRight , Briefcase } from "lucide-react";
 import { db } from "@/db";
 import {
   courses as coursesTable,
@@ -90,6 +90,15 @@ export default async function DashboardPage() {
               <FileText className="h-5 w-5" />
               Analyze Job Description
             </Button>
+            <Link href="/profile/applications">
+              <Button
+                variant="outline"
+                className="gap-2 shadow-sm bg-card hover:bg-accent"
+              >
+                <Briefcase className="h-5 w-5" />
+                Applied Jobs
+              </Button>
+            </Link>
           </div>
         </div>
         <div className="grid grid-cols-12 gap-6">

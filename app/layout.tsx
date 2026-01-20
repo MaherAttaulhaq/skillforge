@@ -19,7 +19,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${inter.className} min-h-screen flex flex-col bg-background text-foreground antialiased`}>
+      <body
+        className={`${inter.className} min-h-screen flex flex-col bg-background text-foreground antialiased`}
+        suppressHydrationWarning
+      >
         <Header />
         <main>{children}</main>
         <Footer />
