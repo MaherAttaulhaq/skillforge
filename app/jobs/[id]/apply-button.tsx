@@ -15,6 +15,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useTransition } from "react";
+import { Check, Loader2 } from "lucide-react";
 
 interface ApplyButtonProps {
   isApplied: boolean;
@@ -27,6 +29,7 @@ export function ApplyButton({ isApplied, applyAction }: ApplyButtonProps) {
 
   const handleApply = (e: React.MouseEvent) => {
     e.preventDefault();
+  const onClick = () => {
     startTransition(async () => {
       try {
         await applyAction();
@@ -36,12 +39,17 @@ export function ApplyButton({ isApplied, applyAction }: ApplyButtonProps) {
         console.error(error);
         toast.error("An error occurred while applying for the job.");
       }
+      await applyAction();
     });
   };
 
   if (isApplied) {
     return (
       <Button disabled className="w-full h-12 text-base font-bold gap-2">
+      <Button
+        disabled
+        className="w-full h-12 text-base font-bold gap-2 bg-green-600 text-white hover:bg-green-600 opacity-100"
+      >
         <Check className="h-5 w-5" />
         Applied
       </Button>
@@ -72,5 +80,19 @@ export function ApplyButton({ isApplied, applyAction }: ApplyButtonProps) {
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+    <Button
+      onClick={onClick}
+      disabled={isPending}
+      className="w-full h-12 text-base font-bold gap-2"
+    >
+      {isPending ? (
+        <>
+          <Loader2 className="h-5 w-5 animate-spin" />
+          Applying...
+        </>
+      ) : (
+        "Apply Now"
+      )}
+    </Button>
   );
 }

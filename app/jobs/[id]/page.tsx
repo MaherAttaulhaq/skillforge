@@ -1,23 +1,24 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  ArrowRight,
-  Bookmark,
-  Sparkles,
-  Briefcase,
-  Users,
-  Calendar,
-  Check,
-} from "lucide-react";
-import Link from "next/link";
 import { db } from "@/db";
 import { jobs, savedJobs, applications } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
-import { auth } from "@/auth";
 import { notFound } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import { auth } from "@/auth";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
+import {
+  MapPin,
+  Briefcase,
+  ArrowRight,
+  Bookmark,
+  Sparkles,
+  Check,
+  Users,
+  Calendar,
+} from "lucide-react";
 import { ApplyButton } from "./apply-button";
+import { revalidatePath } from "next/cache";
 
 interface Params {
   id: string;
@@ -46,24 +47,22 @@ export default async function JobDetailPage({
 
   let isSaved = false;
   let isApplied = false;
+
   if (session?.user?.id) {
     const userId = parseInt(session.user.id);
     const saved = await db
       .select()
       .from(savedJobs)
-      .where(
-        and(
-          eq(savedJobs.userId, userId),
-          eq(savedJobs.jobId, jobId),
-        ),
-      )
+      .where(and(eq(savedJobs.userId, userId), eq(savedJobs.jobId, jobId)))
       .get();
     isSaved = !!saved;
 
     const application = await db
       .select()
       .from(applications)
-      .where(and(eq(applications.userId, userId), eq(applications.jobId, jobId)))
+      .where(
+        and(eq(applications.userId, userId), eq(applications.jobId, jobId)),
+      )
       .get();
     isApplied = !!application;
   }
@@ -71,7 +70,6 @@ export default async function JobDetailPage({
   async function toggleSaveJob() {
     "use server";
     if (!session?.user?.id) return;
-
     const userId = parseInt(session.user.id);
 
     if (isSaved) {
@@ -79,7 +77,10 @@ export default async function JobDetailPage({
         .delete(savedJobs)
         .where(and(eq(savedJobs.userId, userId), eq(savedJobs.jobId, jobId)));
     } else {
-      await db.insert(savedJobs).values({ userId, jobId });
+      await db.insert(savedJobs).values({
+        userId,
+        jobId,
+      });
     }
     revalidatePath(`/jobs/${id}`);
   }
@@ -87,18 +88,17 @@ export default async function JobDetailPage({
   async function applyToJob() {
     "use server";
     if (!session?.user?.id) return;
-    
+    const userId = parseInt(session.user.id);
+
     await db.insert(applications).values({
-      userId: parseInt(session.user.id),
+      userId,
       jobId,
     });
-
     revalidatePath(`/jobs/${id}`);
   }
 
   return (
     <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-      {/* Breadcrumbs */}
       <div className="flex flex-wrap gap-2 mb-8 text-sm">
         <Link
           href="/jobs"
@@ -120,12 +120,13 @@ export default async function JobDetailPage({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 lg:gap-12">
-        {/* Left Column (Sticky Summary) */}
         <div className="lg:col-span-2 lg:sticky lg:top-28 h-fit mb-8 lg:mb-0">
           <div className="flex flex-col gap-6">
-            {/* Company Header */}
-            <div className="flex gap-4 items-center">
-              <div className="bg-white dark:bg-slate-800 rounded-lg min-h-20 w-20 p-2 border">
+            <Link
+              href={`/company/${job.companyId}`}
+              className="flex gap-4 items-center group"
+            >
+              <div className="bg-white dark:bg-slate-800 rounded-lg min-h-20 w-20 p-2 border group-hover:border-primary/50 transition-colors">
                 <img
                   alt={`${job.company} Logo`}
                   className="object-contain w-full h-full"
@@ -133,14 +134,15 @@ export default async function JobDetailPage({
                 />
               </div>
               <div className="flex flex-col">
-                <p className="text-xl font-bold">{job.company}</p>
+                <p className="text-xl font-bold group-hover:text-primary transition-colors">
+                  {job.company}
+                </p>
                 <p className="text-base text-muted-foreground">
                   {job.location}
                 </p>
               </div>
-            </div>
+            </Link>
 
-            {/* Job Title & Salary */}
             <div className="flex flex-col gap-2">
               <h1 className="text-3xl font-black leading-tight tracking-tighter">
                 {job.title}
@@ -150,7 +152,6 @@ export default async function JobDetailPage({
               </p>
             </div>
 
-            {/* Job Type Badges */}
             <div className="flex gap-2 flex-wrap">
               {job.type && (
                 <Badge variant="secondary" className="h-8 px-3">
@@ -164,7 +165,6 @@ export default async function JobDetailPage({
               )}
             </div>
 
-            {/* Primary Action Buttons */}
             <div className="flex flex-col sm:flex-row lg:flex-col gap-3">
               {session ? (
                 <ApplyButton isApplied={isApplied} applyAction={applyToJob} />
@@ -191,7 +191,6 @@ export default async function JobDetailPage({
               </form>
             </div>
 
-            {/* AI Match Card */}
             <Card className="border-accent/30 bg-accent/10 dark:bg-accent/5">
               <CardContent className="p-4 flex items-center gap-4">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-white">
@@ -202,7 +201,7 @@ export default async function JobDetailPage({
                     SkillForge Analysis
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    You&apos;re a{" "}
+                    You're a{" "}
                     <span className="font-bold">{job.match}% match</span> for
                     this role.
                   </p>
@@ -210,7 +209,6 @@ export default async function JobDetailPage({
               </CardContent>
             </Card>
 
-            {/* Key Information Card */}
             <Card>
               <CardContent className="p-5 flex flex-col gap-4">
                 <h3 className="text-lg font-bold">Key Information</h3>
@@ -237,10 +235,8 @@ export default async function JobDetailPage({
           </div>
         </div>
 
-        {/* Right Column (Scrollable Details) */}
         <div className="lg:col-span-3">
           <div className="flex flex-col gap-8">
-            {/* Job Details Card */}
             <Card>
               <CardContent className="p-6 md:p-8">
                 <div className="prose prose-slate dark:prose-invert max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-a:text-primary hover:prose-a:underline">
@@ -268,7 +264,6 @@ export default async function JobDetailPage({
               </CardContent>
             </Card>
 
-            {/* Skills Required Card */}
             {job.tags && (
               <Card>
                 <CardContent className="p-6 md:p-8">
