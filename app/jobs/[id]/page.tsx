@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { jobs, savedJobs, applications } from "@/db/schema";
+import { jobs, savedJobs, applications, users } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
@@ -48,12 +48,26 @@ export default async function JobDetailPage({
   let isSaved = false;
   let isApplied = false;
 
-  if (session?.user?.id) {
-    const userId = parseInt(session.user.id);
+  let userId = session?.user?.id;
+  if (!userId && session?.user?.email) {
+    const user = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, session.user.email))
+      .get();
+    if (user) userId = user.id;
+  }
+
+  if (userId) {
+    const safeUserId =
+      typeof userId === "string" && /^\d+$/.test(userId)
+        ? parseInt(userId)
+        : userId;
+
     const saved = await db
       .select()
       .from(savedJobs)
-      .where(and(eq(savedJobs.userId, userId), eq(savedJobs.jobId, jobId)))
+      .where(and(eq(savedJobs.userId, safeUserId), eq(savedJobs.jobId, jobId)))
       .get();
     isSaved = !!saved;
 
@@ -61,7 +75,7 @@ export default async function JobDetailPage({
       .select()
       .from(applications)
       .where(
-        and(eq(applications.userId, userId), eq(applications.jobId, jobId)),
+        and(eq(applications.userId, safeUserId), eq(applications.jobId, jobId)),
       )
       .get();
     isApplied = !!application;
@@ -70,23 +84,41 @@ export default async function JobDetailPage({
   async function toggleSaveJob() {
     "use server";
     const session = await auth();
-    if (!session?.user?.id) return;
-    const userId = parseInt(session.user.id);
+
+    let userId = session?.user?.id;
+    if (!userId && session?.user?.email) {
+      const user = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, session.user.email))
+        .get();
+      if (user) userId = user.id;
+    }
+    if (!userId) return;
+
+    const safeUserId =
+      typeof userId === "string" && /^\d+$/.test(userId)
+        ? parseInt(userId)
+        : userId;
 
     try {
       const existing = await db
         .select()
         .from(savedJobs)
-        .where(and(eq(savedJobs.userId, userId), eq(savedJobs.jobId, jobId)))
+        .where(
+          and(eq(savedJobs.userId, safeUserId), eq(savedJobs.jobId, jobId)),
+        )
         .get();
 
       if (existing) {
         await db
           .delete(savedJobs)
-          .where(and(eq(savedJobs.userId, userId), eq(savedJobs.jobId, jobId)));
+          .where(
+            and(eq(savedJobs.userId, safeUserId), eq(savedJobs.jobId, jobId)),
+          );
       } else {
         await db.insert(savedJobs).values({
-          userId,
+          userId: safeUserId,
           jobId,
         });
       }
@@ -100,25 +132,45 @@ export default async function JobDetailPage({
   async function applyToJob() {
     "use server";
     const session = await auth();
-    if (!session?.user?.id) {
-      console.error("Auth Error: User is logged in but ID is missing from session.", session);
+
+    let userId = session?.user?.id;
+    if (!userId && session?.user?.email) {
+      const user = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, session.user.email))
+        .get();
+      if (user) userId = user.id;
+    }
+
+    if (!userId) {
+      console.error(
+        "Auth Error: User is logged in but ID is missing from session.",
+        session,
+      );
       throw new Error("Not authenticated");
     }
-    const userId = parseInt(session.user.id);
+    const safeUserId =
+      typeof userId === "string" && /^\d+$/.test(userId)
+        ? parseInt(userId)
+        : userId;
 
     try {
       const existing = await db
         .select()
         .from(applications)
         .where(
-          and(eq(applications.userId, userId), eq(applications.jobId, jobId)),
+          and(
+            eq(applications.userId, safeUserId),
+            eq(applications.jobId, jobId),
+          ),
         )
         .get();
 
       if (existing) throw new Error("Already applied");
 
       await db.insert(applications).values({
-        userId,
+        userId: safeUserId,
         jobId,
       });
       revalidatePath(`/jobs/${id}`);
@@ -197,7 +249,7 @@ export default async function JobDetailPage({
             </div>
 
             <div className="flex flex-col sm:flex-row lg:flex-col gap-3">
-              {session ? (
+              {session?.user ? (
                 <ApplyButton isApplied={isApplied} applyAction={applyToJob} />
               ) : (
                 <Button
@@ -211,7 +263,7 @@ export default async function JobDetailPage({
               <SaveButton
                 isSaved={isSaved}
                 toggleSaveAction={toggleSaveJob}
-                disabled={!session}
+                disabled={!session?.user}
               />
             </div>
 
