@@ -11,13 +11,13 @@ import {
   MapPin,
   Briefcase,
   ArrowRight,
-  Bookmark,
   Sparkles,
   Check,
   Users,
   Calendar,
 } from "lucide-react";
 import { ApplyButton } from "./apply-button";
+import { SaveButton } from "./save-button";
 import { revalidatePath } from "next/cache";
 
 interface Params {
@@ -69,32 +69,63 @@ export default async function JobDetailPage({
 
   async function toggleSaveJob() {
     "use server";
+    const session = await auth();
     if (!session?.user?.id) return;
     const userId = parseInt(session.user.id);
 
-    if (isSaved) {
-      await db
-        .delete(savedJobs)
-        .where(and(eq(savedJobs.userId, userId), eq(savedJobs.jobId, jobId)));
-    } else {
-      await db.insert(savedJobs).values({
-        userId,
-        jobId,
-      });
+    try {
+      const existing = await db
+        .select()
+        .from(savedJobs)
+        .where(and(eq(savedJobs.userId, userId), eq(savedJobs.jobId, jobId)))
+        .get();
+
+      if (existing) {
+        await db
+          .delete(savedJobs)
+          .where(and(eq(savedJobs.userId, userId), eq(savedJobs.jobId, jobId)));
+      } else {
+        await db.insert(savedJobs).values({
+          userId,
+          jobId,
+        });
+      }
+      revalidatePath(`/jobs/${id}`);
+    } catch (error) {
+      console.error("Error toggling saved job:", error);
+      throw error;
     }
-    revalidatePath(`/jobs/${id}`);
   }
 
   async function applyToJob() {
     "use server";
-    if (!session?.user?.id) return;
+    const session = await auth();
+    if (!session?.user?.id) {
+      console.error("Auth Error: User is logged in but ID is missing from session.", session);
+      throw new Error("Not authenticated");
+    }
     const userId = parseInt(session.user.id);
 
-    await db.insert(applications).values({
-      userId,
-      jobId,
-    });
-    revalidatePath(`/jobs/${id}`);
+    try {
+      const existing = await db
+        .select()
+        .from(applications)
+        .where(
+          and(eq(applications.userId, userId), eq(applications.jobId, jobId)),
+        )
+        .get();
+
+      if (existing) throw new Error("Already applied");
+
+      await db.insert(applications).values({
+        userId,
+        jobId,
+      });
+      revalidatePath(`/jobs/${id}`);
+    } catch (error) {
+      console.error("Error applying to job:", error);
+      throw error;
+    }
   }
 
   return (
@@ -177,18 +208,11 @@ export default async function JobDetailPage({
                   Login to Apply
                 </Button>
               )}
-              <form action={toggleSaveJob} className="w-full">
-                <Button
-                  disabled={!session}
-                  variant="outline"
-                  className="w-full h-12 text-base font-bold gap-2 border-2"
-                >
-                  <Bookmark
-                    className={`h-5 w-5 ${isSaved ? "fill-current" : ""}`}
-                  />
-                  {isSaved ? "Saved" : "Save Job"}
-                </Button>
-              </form>
+              <SaveButton
+                isSaved={isSaved}
+                toggleSaveAction={toggleSaveJob}
+                disabled={!session}
+              />
             </div>
 
             <Card className="border-accent/30 bg-accent/10 dark:bg-accent/5">
