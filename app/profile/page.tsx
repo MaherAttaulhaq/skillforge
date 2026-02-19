@@ -232,7 +232,7 @@ export default async function ProfilePage({
       </div>
 
       {user.role === "instructor" ? (
-        <InstructorDashboard courses={courses.created} />
+        <InstructorDashboard instructorCourses={courses.created} />
       ) : (
         <div className="flex flex-col gap-6">
           <Card>

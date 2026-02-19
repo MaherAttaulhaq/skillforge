@@ -2,6 +2,8 @@ import { useSession } from "next-auth/react";
 import { ROLE_PERMISSIONS } from "./permissions";
 import { UserRole } from "@/db/schema";
 
+export type Role = UserRole;
+
 export function useRBAC(permission: string) {
   const { data: session } = useSession();
   const userRole = session?.user?.role;
