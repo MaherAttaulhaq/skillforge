@@ -42,7 +42,7 @@ export default function Page() {
           Enter your details below to register your account
         </CardDescription>
         <CardAction>
-          <Link href="/signin">
+          <Link href="/login">
             <Button variant="link"> Sign In</Button>
           </Link>
         </CardAction>

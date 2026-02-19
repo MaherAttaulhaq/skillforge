@@ -13,7 +13,7 @@ import { getSession } from "@/lib/auth";
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
   const session = await getSession();
@@ -57,11 +57,11 @@ export async function GET(
         .where(eq(lessonsTable.moduleId, module.id))
         .orderBy(lessonsTable.position);
       return { ...module, lessons };
-    })
+    }),
   );
 
   const allLessonsIds = modulesWithLessons.flatMap((m) =>
-    m.lessons.map((l) => l.id)
+    m.lessons.map((l) => l.id),
   );
 
   let userProgress: { isCompleted: boolean | null; lessonId: number }[] = [];
@@ -76,8 +76,8 @@ export async function GET(
       .where(
         and(
           eq(lessonProgress.userId, user.id),
-          inArray(lessonProgress.lessonId, allLessonsIds)
-        )
+          inArray(lessonProgress.lessonId, allLessonsIds),
+        ),
       );
   }
 
@@ -94,13 +94,13 @@ export async function GET(
         .from(coursesTable)
         .leftJoin(
           categoriesTable,
-          eq(coursesTable.categoryId, categoriesTable.id)
+          eq(coursesTable.categoryId, categoriesTable.id),
         )
         .where(
           and(
             eq(coursesTable.categoryId, course.categoryId),
-            ne(coursesTable.id, course.id)
-          )
+            ne(coursesTable.id, course.id),
+          ),
         )
         .limit(3)
     : [];
