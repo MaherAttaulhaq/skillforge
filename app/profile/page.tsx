@@ -44,12 +44,12 @@ async function getProfileData(query: string) {
 
   // Fetch stats
   const [postCount] = await db
-    .select({ count: sql`count(*)` })
+    .select({ count: sql<number>`count(*)` })
     .from(posts)
     .where(eq(posts.authorId, user.id));
 
   const [commentCount] = await db
-    .select({ count: sql`count(*)` })
+    .select({ count: sql<number>`count(*)` })
     .from(comments)
     .where(eq(comments.authorId, user.id));
 
@@ -180,7 +180,7 @@ export default async function ProfilePage({
       <div className="flex flex-col md:flex-row gap-8 items-start mb-8">
         <Avatar className="h-32 w-32 border-4 border-background shadow-xl">
           <AvatarImage
-            src={user.image || ""}
+            src={user.avatar || ""}
             alt={user.name || ""}
             className="object-cover"
           />

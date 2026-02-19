@@ -10,7 +10,7 @@ import path from "node:path";
 
 export async function submitAction(
   prevState: { message: string; success: boolean },
-  formData: FormData
+  formData: FormData,
 ) {
   const session = await auth();
   if (!session?.user?.email) {
@@ -58,7 +58,7 @@ export async function submitAction(
       const imageUrl = `/uploads/${filename}`;
       await db
         .update(users)
-        .set({ image: imageUrl })
+        .set({ avatar: imageUrl })
         .where(eq(users.id, user.id));
     }
 
@@ -75,7 +75,7 @@ export async function submitAction(
         newSkills.map((skill) => ({
           userId: user.id,
           skill: skill,
-        }))
+        })),
       );
     }
 
