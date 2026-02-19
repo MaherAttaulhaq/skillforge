@@ -222,7 +222,7 @@ export async function createCourse(
         .returning({ id: modules.id });
 
       for (const [lessonIndex, lesson] of module.lessons.entries()) {
-        let videoUrl: string | undefined;
+        let videoUrl: string | null = null;
         if (lesson.video) {
           videoUrl = await saveFile(lesson.video as File);
         }

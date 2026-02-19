@@ -48,7 +48,7 @@ export default async function JobDetailPage({
   let isSaved = false;
   let isApplied = false;
 
-  let userId = session?.user?.id;
+  let userId: string | number | undefined = session?.user?.id;
   if (!userId && session?.user?.email) {
     const user = await db
       .select()
@@ -85,7 +85,7 @@ export default async function JobDetailPage({
     "use server";
     const session = await auth();
 
-    let userId = session?.user?.id;
+    let userId: string | number | undefined = session?.user?.id;
     if (!userId && session?.user?.email) {
       const user = await db
         .select()
@@ -133,7 +133,7 @@ export default async function JobDetailPage({
     "use server";
     const session = await auth();
 
-    let userId = session?.user?.id;
+    let userId: string | number | undefined = session?.user?.id;
     if (!userId && session?.user?.email) {
       const user = await db
         .select()
