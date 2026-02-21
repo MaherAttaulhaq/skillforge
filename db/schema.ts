@@ -11,7 +11,7 @@ import { relations } from "drizzle-orm";
 
 /* ---------------- USERS ---------------- */
 export const users = sqliteTable("users", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+  id: text("id").notNull().primaryKey(),
   name: text("name").notNull(),
   email: text("email").unique().notNull(),
   emailVerified: integer("email_verified", { mode: "timestamp_ms" }),
@@ -27,7 +27,7 @@ export const users = sqliteTable("users", {
 /* ---------------- USER SKILLS ---------------- */
 export const userSkills = sqliteTable("user_skills", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  userId: integer("user_id")
+  userId: text("user_id")
     .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
   skill: text("skill").notNull(),
@@ -55,7 +55,7 @@ export type UserRole = "student" | "instructor" | "admin";
 /* ---------------- INSTRUCTORS ---------------- */
 export const instructors = sqliteTable("instructors", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  userId: integer("user_id")
+  userId: text("user_id")
     .references(() => users.id)
     .notNull()
     .unique(),
@@ -86,7 +86,7 @@ export const courses = sqliteTable("courses", {
   categoryId: integer("category_id")
     .references(() => categories.id)
     .notNull(),
-  instructorId: integer("instructor_id")
+  instructorId: text("instructor_id")
     .references(() => users.id)
     .notNull(),
   level: text("level").default("beginner"), // beginner | intermediate | advanced
@@ -110,7 +110,7 @@ export const chapters = sqliteTable("chapters", {
 
 export const purchases = sqliteTable("purchases", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  userId: integer("user_id")
+  userId: text("user_id")
     .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
   courseId: integer("course_id")
@@ -122,7 +122,7 @@ export const purchases = sqliteTable("purchases", {
 export const users_courses = sqliteTable(
   "users_courses",
   {
-    userId: integer("user_id")
+    userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     courseId: integer("course_id")
@@ -155,7 +155,7 @@ export const posts = sqliteTable("posts", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   title: text("title").notNull(),
   content: text("content"),
-  authorId: integer("author_id")
+  authorId: text("author_id")
     .references(() => users.id)
     .notNull(),
   categoryId: integer("category_id")
@@ -220,7 +220,7 @@ export const comments = sqliteTable("comments", {
   postId: integer("post_id")
     .references(() => posts.id)
     .notNull(),
-  authorId: integer("author_id")
+  authorId: text("author_id")
     .references(() => users.id)
     .notNull(),
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
@@ -241,7 +241,7 @@ export const commentsRelations = relations(comments, ({ one }) => ({
 export const likes = sqliteTable(
   "likes",
   {
-    userId: integer("user_id")
+    userId: text("user_id")
       .references(() => users.id)
       .notNull(),
     postId: integer("post_id")
@@ -257,7 +257,7 @@ export const likes = sqliteTable(
 /* ---------------- SHARES ---------------- */
 export const shares = sqliteTable("shares", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  userId: integer("user_id")
+  userId: text("user_id")
     .references(() => users.id)
     .notNull(),
   postId: integer("post_id")
@@ -293,7 +293,7 @@ export const lessons = sqliteTable("lessons", {
 export const enrollments = sqliteTable(
   "enrollments",
   {
-    userId: integer("user_id")
+    userId: text("user_id")
       .references(() => users.id)
       .notNull(),
     courseId: integer("course_id")
@@ -309,7 +309,7 @@ export const enrollments = sqliteTable(
 /* ---------------- LESSON PROGRESS ---------------- */
 export const lessonProgress = sqliteTable("lesson_progress", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  userId: integer("user_id")
+  userId: text("user_id")
     .references(() => users.id)
     .notNull(),
   lessonId: integer("lesson_id")
@@ -325,7 +325,7 @@ export const reviews = sqliteTable("reviews", {
   courseId: integer("course_id")
     .references(() => courses.id)
     .notNull(),
-  userId: integer("user_id")
+  userId: text("user_id")
     .references(() => users.id)
     .notNull(),
   rating: integer("rating").notNull(), // 1–5
@@ -336,7 +336,7 @@ export const reviews = sqliteTable("reviews", {
 /* ---------------- AI GENERATED CONTENT ---------------- */
 export const aiContent = sqliteTable("ai_content", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  userId: integer("user_id").references(() => users.id),
+  userId: text("user_id").references(() => users.id),
   type: text("type").notNull(), // summary | explanation | quiz | flashcard
   prompt: text("prompt").notNull(),
   result: text("result").notNull(),
@@ -346,7 +346,7 @@ export const aiContent = sqliteTable("ai_content", {
 /* ---------------- NOTIFICATIONS ---------------- */
 export const notifications = sqliteTable("notifications", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  userId: integer("user_id")
+  userId: text("user_id")
     .references(() => users.id)
     .notNull(),
   title: text("title").notNull(),
@@ -358,7 +358,7 @@ export const notifications = sqliteTable("notifications", {
 /* ---------------- CERTIFICATES ---------------- */
 export const certificates = sqliteTable("certificates", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  userId: integer("user_id")
+  userId: text("user_id")
     .references(() => users.id)
     .notNull(),
   courseId: integer("course_id")
@@ -408,7 +408,7 @@ export const jobs = sqliteTable("jobs", {
 export const savedJobs = sqliteTable(
   "saved_jobs",
   {
-    userId: integer("user_id")
+    userId: text("user_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
     jobId: integer("job_id")
@@ -436,7 +436,7 @@ export const savedJobsRelations = relations(savedJobs, ({ one }) => ({
 export const applications = sqliteTable(
   "applications",
   {
-    userId: integer("user_id")
+    userId: text("user_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
     jobId: integer("job_id")
@@ -475,7 +475,7 @@ export const jobsRelations = relations(jobs, ({ one }) => ({
 export const accounts = sqliteTable(
   "accounts",
   {
-    userId: integer("user_id")
+    userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     type: text("type").$type<AdapterAccount["type"]>().notNull(),
@@ -499,7 +499,7 @@ export const accounts = sqliteTable(
 // ---------------- SESSIONS ----------------
 export const sessions = sqliteTable("sessions", {
   sessionToken: text("session_token").notNull().primaryKey(),
-  userId: integer("user_id")
+  userId: text("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   expires: integer("expires", { mode: "timestamp_ms" }).notNull(),

@@ -54,7 +54,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             console.log("Authentication successful, returning user.");
             // Return a simplified user object for the session with string id
             return {
-              id: String(user.id),
+              id: user.id,
               email: user.email,
               name: user.name,
               role: user.role,

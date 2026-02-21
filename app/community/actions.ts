@@ -15,6 +15,7 @@ import {
 } from "@/db/schema";
 import { revalidatePath } from "next/cache";
 import { eq, and } from "drizzle-orm";
+import { auth } from "@/auth";
 
 async function saveFile(file: File) {
   const uploadsDir = path.join(process.cwd(), "public", "uploads");
@@ -32,10 +33,8 @@ async function saveFile(file: File) {
 }
 
 async function getCurrentUserId() {
-  const user = await db.query.users.findFirst({
-    where: eq(users.name, "Attaulhaq"),
-  });
-  return user?.id || 1;
+  const session = await auth();
+  return (session?.user as any)?.id as string | undefined;
 }
 
 export async function addComment(postId: number, content: string) {
@@ -104,7 +103,7 @@ export async function editComment(commentId: number, content: string) {
 
 export async function createPost(
   prevState: { message: string; success: boolean } | undefined,
-  formData: FormData
+  formData: FormData,
 ): Promise<{ message: string; success: boolean }> {
   const userId = await getCurrentUserId();
 
@@ -157,7 +156,7 @@ export async function createPost(
         tagIds.map((tagId) => ({
           postId: newPost.id,
           tagId: tagId,
-        }))
+        })),
       );
     }
 
