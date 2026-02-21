@@ -27,7 +27,7 @@ export async function submitAction(
 
   const name = formData.get("name") as string;
   const skillsString = formData.get("skills") as string;
-  const avatarFile = formData.get("avatar") as File;
+  const imageFile = formData.get("image") as File;
 
   try {
     // Update name
@@ -35,8 +35,8 @@ export async function submitAction(
       await db.update(users).set({ name }).where(eq(users.id, user.id));
     }
 
-    // Handle Avatar Upload
-    if (avatarFile && avatarFile.size > 0 && avatarFile.name !== "undefined") {
+    // Handle Image Upload
+    if (imageFile && imageFile.size > 0 && imageFile.name !== "undefined") {
       const uploadsDir = path.join(process.cwd(), "public", "uploads");
 
       try {
@@ -46,11 +46,11 @@ export async function submitAction(
       }
 
       const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-      const ext = path.extname(avatarFile.name);
-      const filename = `avatar-${user.id}-${uniqueSuffix}${ext}`;
+      const ext = path.extname(imageFile.name);
+      const filename = `image-${user.id}-${uniqueSuffix}${ext}`;
       const filepath = path.join(uploadsDir, filename);
 
-      const arrayBuffer = await avatarFile.arrayBuffer();
+      const arrayBuffer = await imageFile.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
       await fs.writeFile(filepath, buffer);
@@ -58,7 +58,7 @@ export async function submitAction(
       const imageUrl = `/uploads/${filename}`;
       await db
         .update(users)
-        .set({ avatar: imageUrl })
+        .set({ image: imageUrl })
         .where(eq(users.id, user.id));
     }
 

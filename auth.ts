@@ -1,4 +1,5 @@
 import NextAuth from "next-auth";
+import type { Adapter } from "next-auth/adapters";
 import Credentials from "next-auth/providers/credentials";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import db from "@/db";
@@ -12,11 +13,11 @@ import { type Role } from "@/lib/rbac";
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   adapter: DrizzleAdapter(db, {
-    usersTable: schema.users as any,
-    accountsTable: schema.accounts as any,
-    sessionsTable: schema.sessions as any,
-    verificationTokensTable: schema.verificationTokens as any,
-  }),
+    usersTable: schema.users,
+    accountsTable: schema.accounts,
+    sessionsTable: schema.sessions,
+    verificationTokensTable: schema.verificationTokens,
+  }) as Adapter,
   providers: [
     Credentials({
       name: "Credentials",
@@ -45,7 +46,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           console.log("Comparing passwords...");
           const passwordsMatch = await bcrypt.compare(
             credentials.password as string,
-            user.passwordHash
+            user.passwordHash,
           );
           console.log("Passwords match:", passwordsMatch);
 
