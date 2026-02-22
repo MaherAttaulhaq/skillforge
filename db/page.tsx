@@ -13,7 +13,7 @@ export default async function AppliedJobsPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
-  const userId = parseInt(session.user.id);
+  const userId = session.user.id;
 
   const appliedJobs = await db
     .select({

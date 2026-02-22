@@ -6,6 +6,7 @@ import { users } from "@/db/schema";
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { randomUUID } from "node:crypto";
 
 const registerSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
@@ -36,6 +37,7 @@ export async function registerUser(
     const passwordHash = await bcrypt.hash(password, 10); // Hash password
 
     await db.insert(users).values({
+      id: randomUUID(),
       name: username,
       email,
       passwordHash,

@@ -1,55 +1,51 @@
-import { db } from "@/lib/db";
+import { db } from "@/db";
+import { users } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import InstructorProfilePage from "@/components/instructor-dashboard";
 import { redirect } from "next/navigation";
+import { auth } from "@/auth";
 
 export default async function InstructorPage() {
-    // 1. Fetch the data from the database
-    // In a real app, you would get the logged-in user's ID from the session
-    // const session = await auth();
-    // const userId = session?.user?.id;
+  // 1. Fetch the data from the database
+  const session = await auth();
+  const userId = session?.user?.id;
 
-    const instructorData = await db.user.findFirst({
-        where: {
-            email: "sarah.jenkins@example.com", // Replace with dynamic user ID
-        },
-        include: {
-            instructorProfile: true,
-            courses: {
-                take: 4,
-                orderBy: { createdAt: 'desc' }
+  if (!userId) return redirect("/login");
+
+  const instructorData = await db.query.users.findFirst({
+    where: eq(users.id, userId),
+    with: {
+      instructorProfile: true,
+      courses: {
+        limit: 4,
+        orderBy: (courses, { desc }) => [desc(courses.createdAt)],
+        with: {
+          reviews: {
+            with: {
+              user: true,
             },
-            reviews: {
-                take: 5,
-                orderBy: { createdAt: 'desc' },
-                include: {
-                    author: true
-                }
-            }
-        }
-    });
+          },
+        },
+      },
+    },
+  });
 
-    if (!instructorData || !instructorData.instructorProfile) {
-        // Handle case where profile doesn't exist
-        return <div className="p-8">Instructor profile not found.</div>;
-    }
+  if (!instructorData || !instructorData.instructorProfile) {
+    // Handle case where profile doesn't exist
+    return <div className="p-8">Instructor profile not found.</div>;
+  }
 
-    const courses = instructorData.courses.map((course) => ({
-        id: course.id,
-        title: course.title,
-        description: course.description || "",
-        rating: 4.9, // Placeholder
-        reviewCount: "1.2k", // Placeholder
-        duration: "12h 30m", // Placeholder
-        students: "4,520", // Placeholder
-        badge: "Bestseller", // Logic to determine badge
-        badgeVariant: "secondary" as const,
-        badgeClass: "bg-accent/10 text-emerald-800 hover:bg-accent/20",
-    }));
+  // The instructor-dashboard component expects a user object with profile properties flattened.
+  const userForDashboard = {
+    ...instructorData,
+    ...instructorData.instructorProfile,
+  };
 
-    // 3. Pass the prepared data to the presentation component
-    return (
-        <InstructorProfilePage
-            courses={courses}
-        />
-    );
+  // 3. Pass the prepared data to the presentation component
+  return (
+    <InstructorProfilePage
+      user={userForDashboard}
+      instructorCourses={instructorData.courses}
+    />
+  );
 }

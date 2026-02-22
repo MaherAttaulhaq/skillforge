@@ -34,13 +34,6 @@ export const userSkills = sqliteTable("user_skills", {
   level: text("level").default("beginner"), // beginner | intermediate | expert
 });
 
-// --- ADD THIS CODE ---
-// This defines the relationship for Drizzle's query builder
-
-export const usersRelations = relations(users, ({ many }) => ({
-  skills: many(userSkills),
-}));
-
 export const userSkillsRelations = relations(userSkills, ({ one }) => ({
   user: one(users, {
     fields: [userSkills.userId],
@@ -134,10 +127,6 @@ export const users_courses = sqliteTable(
     pk: primaryKey({ columns: [t.userId, t.courseId] }),
   }),
 );
-
-export const coursesRelations = relations(courses, ({ many }) => ({
-  users: many(users_courses),
-}));
 
 export const usersCoursesRelations = relations(users_courses, ({ one }) => ({
   user: one(users, {
@@ -517,3 +506,41 @@ export const verificationTokens = sqliteTable(
     pk: primaryKey({ columns: [table.identifier, table.token] }),
   }),
 );
+
+export const usersRelations = relations(users, ({ many, one }) => ({
+  skills: many(userSkills),
+  instructorProfile: one(instructors, {
+    fields: [users.id],
+    references: [instructors.userId],
+  }),
+  courses: many(courses),
+  reviews: many(reviews),
+}));
+
+export const instructorsRelations = relations(instructors, ({ one }) => ({
+  user: one(users, {
+    fields: [instructors.userId],
+    references: [users.id],
+  }),
+}));
+
+export const coursesRelations = relations(courses, ({ many, one }) => ({
+  users: many(users_courses),
+  instructor: one(users, {
+    fields: [courses.instructorId],
+    references: [users.id],
+  }),
+  reviews: many(reviews),
+  modules: many(modules),
+}));
+
+export const reviewsRelations = relations(reviews, ({ one }) => ({
+  course: one(courses, {
+    fields: [reviews.courseId],
+    references: [courses.id],
+  }),
+  user: one(users, {
+    fields: [reviews.userId],
+    references: [users.id],
+  }),
+}));

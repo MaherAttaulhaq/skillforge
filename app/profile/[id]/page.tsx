@@ -17,11 +17,7 @@ type ProfilePageProps = {
 
 export default async function ProfilePage({ params }: ProfilePageProps) {
   const { id } = await params;
-  const userId = await parseInt(id, 10);
-
-  if (isNaN(userId)) {
-    return <div>Invalid user ID</div>;
-  }
+  const userId = id;
 
   const user = await db.query.users.findFirst({
     where: eq(users.id, userId),
