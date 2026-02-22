@@ -1,4 +1,5 @@
 import { hash } from "bcryptjs";
+import { randomUUID } from "node:crypto";
 import { db } from "./index";
 import {
   users,
@@ -56,18 +57,21 @@ async function seed() {
     .insert(users)
     .values([
       {
+        id: randomUUID(),
         name: "Ali Raza",
         email: "ali@example.com",
         passwordHash: password,
         role: "student",
       },
       {
+        id: randomUUID(),
         name: "Sara Khan",
         email: "sara@example.com",
         passwordHash: password,
         role: "instructor",
       },
       {
+        id: randomUUID(),
         name: "Admin User",
         email: "admin@example.com",
         passwordHash: password,
