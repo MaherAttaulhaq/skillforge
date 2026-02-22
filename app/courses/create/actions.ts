@@ -24,7 +24,7 @@ const courseSchema = z.object({
     .refine((file) => file.size > 0, "Thumbnail is required.")
     .refine(
       (file) => file.size === 0 || file.type.startsWith("image/"),
-      "Invalid file type. Must be an image."
+      "Invalid file type. Must be an image.",
     ),
   modules: z.array(
     z.object({
@@ -40,11 +40,11 @@ const courseSchema = z.object({
             .refine(
               (file) =>
                 !file || file.size === 0 || file.type.startsWith("video/"),
-              "Invalid file type. Must be a video."
+              "Invalid file type. Must be a video.",
             ),
-        })
+        }),
       ),
-    })
+    }),
   ),
 });
 
@@ -97,10 +97,18 @@ function parseModulesFromFormData(formData: FormData) {
       return { ...module, lessons };
     });
 
-  console.log("[parseModulesFromFormData] Final modules array before return:", JSON.stringify(modules, (key, value) => {
-    if (value instanceof File) return { name: value.name, size: value.size, type: value.type };
-    return value;
-  }, 2));
+  console.log(
+    "[parseModulesFromFormData] Final modules array before return:",
+    JSON.stringify(
+      modules,
+      (key, value) => {
+        if (value instanceof File)
+          return { name: value.name, size: value.size, type: value.type };
+        return value;
+      },
+      2,
+    ),
+  );
 
   return modules;
 }
@@ -118,14 +126,20 @@ async function saveFile(file: File): Promise<string | null> {
     const fileExtension = path.extname(file.name);
     const newFilename = `${uniqueSuffix}${fileExtension}`;
     const filePath = path.join(uploadsDir, newFilename);
-    console.log(`[saveFile] New filename: ${newFilename}, Full path: ${filePath}`);
+    console.log(
+      `[saveFile] New filename: ${newFilename}, Full path: ${filePath}`,
+    );
 
     if (file.size === 0) {
-      console.warn(`[saveFile] File ${file.name} has zero size. Skipping write.`);
+      console.warn(
+        `[saveFile] File ${file.name} has zero size. Skipping write.`,
+      );
       return null; // Or handle as an error, depending on desired behavior
     }
 
-    console.log(`[saveFile] Reading file buffer for ${file.name}, size: ${file.size}`);
+    console.log(
+      `[saveFile] Reading file buffer for ${file.name}, size: ${file.size}`,
+    );
     const buffer = Buffer.from(await file.arrayBuffer());
     console.log(`[saveFile] Buffer created, length: ${buffer.length}`);
 
@@ -141,7 +155,7 @@ async function saveFile(file: File): Promise<string | null> {
 
 export async function createCourse(
   prevState: { message: string; errors?: { [key: string]: string[] } },
-  formData: FormData
+  formData: FormData,
 ) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -183,7 +197,7 @@ export async function createCourse(
     modules: moduleData,
   } = validatedFields.data;
 
-  const instructorId = parseInt(session.user.id, 10);
+  const instructorId = session.user.id;
 
   let newCourse: { id: number; slug: string } | undefined;
   try {
@@ -210,7 +224,7 @@ export async function createCourse(
     if (!newCourse) {
       throw new Error("Failed to create course.");
     }
-    
+
     for (const [moduleIndex, module] of moduleData.entries()) {
       const [newModule] = await db
         .insert(modules)

@@ -59,7 +59,7 @@ export default async function JobDetailPage({
   }
 
   if (userId) {
-    const safeUserId = typeof userId === "string" ? parseInt(userId) : userId;
+    const safeUserId = userId.toString();
 
     const saved = await db
       .select()
@@ -93,7 +93,7 @@ export default async function JobDetailPage({
     }
     if (!userId) return;
 
-    const safeUserId = typeof userId === "string" ? parseInt(userId) : userId;
+    const safeUserId = userId.toString();
 
     try {
       const existing = await db
@@ -144,7 +144,7 @@ export default async function JobDetailPage({
       );
       throw new Error("Not authenticated");
     }
-    const safeUserId = typeof userId === "string" ? parseInt(userId) : userId;
+    const safeUserId = userId.toString();
 
     try {
       const existing = await db

@@ -19,7 +19,7 @@ import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { formatDistanceToNow } from "date-fns";
 import { NavLink } from "@/components/nav-link";
 import { PostFilters } from "@/components/PostFilters";
-import { PostInteractions } from "./PostInteractions"
+import { PostInteractions } from "./PostInteractions";
 import { PaginationControl } from "@/components/PaginationControl";
 import { auth } from "@/auth";
 
@@ -41,9 +41,11 @@ export default async function CommunityPage({
   const offset = (currentPage - 1) * pageSize;
 
   const session = await auth();
-  const currentUser = session?.user?.email ? await db.query.users.findFirst({
-    where: eq(users.email, session.user.email),
-  }) : null;
+  const currentUser = session?.user?.email
+    ? await db.query.users.findFirst({
+        where: eq(users.email, session.user.email),
+      })
+    : null;
 
   const currentUserId = currentUser?.id;
 
@@ -64,7 +66,10 @@ export default async function CommunityPage({
       commentCount: sql<number>`count(distinct ${comments.id})`.mapWith(Number),
       likeCount: sql<number>`count(distinct ${likes.userId})`.mapWith(Number),
       shareCount: sql<number>`count(distinct ${shares.id})`.mapWith(Number),
-      isLiked: sql<number>`max(case when ${likes.userId} = ${currentUserId || -1} then 1 else 0 end)`.mapWith(Boolean),
+      isLiked:
+        sql<number>`max(case when ${likes.userId} = ${currentUserId || -1} then 1 else 0 end)`.mapWith(
+          Boolean,
+        ),
     })
     .from(postsTable)
     .leftJoin(users, eq(postsTable.authorId, users.id))
@@ -74,7 +79,9 @@ export default async function CommunityPage({
     .leftJoin(shares, eq(postsTable.id, shares.postId));
 
   const countQuery = db
-    .select({ count: sql<number>`count(distinct ${postsTable.id})`.mapWith(Number) })
+    .select({
+      count: sql<number>`count(distinct ${postsTable.id})`.mapWith(Number),
+    })
     .from(postsTable)
     .leftJoin(categories, eq(postsTable.categoryId, categories.id));
 
@@ -106,7 +113,7 @@ export default async function CommunityPage({
     users.name,
     users.avatar,
     categories.slug,
-    categories.title
+    categories.title,
   );
 
   if (sort === "popular" || sort === "most-voted") {
@@ -142,19 +149,19 @@ export default async function CommunityPage({
   const commentsData =
     postIds.length > 0
       ? await db
-        .select({
-          id: comments.id,
-          postId: comments.postId,
-          content: comments.content,
-          authorId: comments.authorId,
-          createdAt: comments.createdAt,
-          authorName: users.name,
-          authorAvatar: users.avatar,
-        })
-        .from(comments)
-        .leftJoin(users, eq(comments.authorId, users.id))
-        .where(inArray(comments.postId, postIds))
-        .orderBy(desc(comments.createdAt))
+          .select({
+            id: comments.id,
+            postId: comments.postId,
+            content: comments.content,
+            authorId: comments.authorId,
+            createdAt: comments.createdAt,
+            authorName: users.name,
+            authorAvatar: users.avatar,
+          })
+          .from(comments)
+          .leftJoin(users, eq(comments.authorId, users.id))
+          .where(inArray(comments.postId, postIds))
+          .orderBy(desc(comments.createdAt))
       : [];
 
   const posts = postsData.map((post) => {
@@ -179,7 +186,7 @@ export default async function CommunityPage({
       .map((c) => ({
         id: c.id,
         content: c.content,
-        authorId: c.authorId || 0,
+        authorId: Number(c.authorId) || 0,
         authorName: c.authorName || "Anonymous",
         authorAvatar: c.authorAvatar,
         formattedTime: c.createdAt
@@ -280,7 +287,10 @@ export default async function CommunityPage({
                   </Button>
                 </NavLink>
               ) : (
-                <Button disabled className="gap-2 shadow-sm opacity-50 cursor-not-allowed">
+                <Button
+                  disabled
+                  className="gap-2 shadow-sm opacity-50 cursor-not-allowed"
+                >
                   <PlusCircle className="h-4 w-4" />
                   Create Post
                 </Button>
@@ -326,7 +336,7 @@ export default async function CommunityPage({
                         {post.mediaUrl && (
                           <div className="mt-3">
                             {post.mediaUrl.endsWith(".mp4") ||
-                              post.mediaUrl.endsWith(".webm") ? (
+                            post.mediaUrl.endsWith(".webm") ? (
                               <video
                                 src={post.mediaUrl}
                                 controls
@@ -354,7 +364,11 @@ export default async function CommunityPage({
                         </div>
                       </div>
                     </div>
-                    <div className={!currentUser ? "pointer-events-none opacity-60" : ""}>
+                    <div
+                      className={
+                        !currentUser ? "pointer-events-none opacity-60" : ""
+                      }
+                    >
                       <PostInteractions
                         postId={post.id}
                         initialLikes={post.likes}
@@ -366,7 +380,7 @@ export default async function CommunityPage({
                           name: currentUser?.name || "Anonymous",
                           avatar: currentUser?.avatar || null,
                         }}
-                        currentUserId={currentUserId || -1}
+                        currentUserId={Number(currentUserId) || -1}
                       />
                     </div>
                   </CardContent>

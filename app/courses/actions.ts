@@ -34,9 +34,9 @@ export async function checkCourseAccess(courseId: string, userId: string) {
     .from(purchases)
     .where(
       and(
-        eq(purchases.userId, parseInt(userId)),
-        eq(purchases.courseId, parseInt(courseId))
-      )
+        eq(purchases.userId, userId),
+        eq(purchases.courseId, parseInt(courseId)),
+      ),
     );
 
   return data.length > 0;
@@ -49,7 +49,7 @@ export async function getEnrolledCourses(userId: string) {
     })
     .from(courses)
     .innerJoin(purchases, eq(courses.id, purchases.courseId))
-    .where(eq(purchases.userId, parseInt(userId)));
+    .where(eq(purchases.userId, userId));
 
   return data.map((item) => item.course);
 }
