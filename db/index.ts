@@ -1,18 +1,8 @@
-// server-only
-import { BetterSQLite3Database, drizzle } from "drizzle-orm/better-sqlite3";
-import Database from "better-sqlite3";
-import * as schema from "./schema";
+import { drizzle } from 'drizzle-orm/sqlite-cloud';
+import { Database } from "@sqlitecloud/drivers";
+// Initialize the native SQLite Cloud client
+const client = new Database(process.env.SQLITE_CLOUD_CONNECTION_STRING!);
 
-let db: BetterSQLite3Database<typeof schema>;
-try {
-  const sqlite = new Database("./sqlite.db");
-  sqlite.pragma("foreign_keys = ON");
-  db = drizzle(sqlite, { schema });
-  console.log("✅ Database connected successfully!");
-} catch (error) {
-  console.error("Failed to connect to the database:", error);
-  throw error; // Re-throw the error to ensure the application fails loudly
-}
-
-export { db };
+// Initialize Drizzle with the client
+export const db = drizzle({ client });
 export default db;
