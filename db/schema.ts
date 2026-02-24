@@ -7,7 +7,7 @@ import {
 } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 import { AdapterAccount } from "next-auth/adapters";
-import { relations } from "drizzle-orm";
+import { relations } from "drizzle-orm/_relations";
 
 /* ---------------- USERS ---------------- */
 export const users = sqliteTable("users", {
