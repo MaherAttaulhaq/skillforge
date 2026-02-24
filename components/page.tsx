@@ -1,51 +1,98 @@
 import { db } from "@/db";
-import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
 import InstructorProfilePage from "@/components/instructor-dashboard";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { courses, enrollments, instructors, reviews, users } from "@/db/schema";
+import { desc, eq, inArray, sql } from "drizzle-orm";
 
 export default async function InstructorPage() {
-  // 1. Fetch the data from the database
   const session = await auth();
   const userId = session?.user?.id;
 
   if (!userId) return redirect("/login");
 
-  const instructorData = await db.query.users.findFirst({
-    where: eq(users.id, userId),
-    with: {
-      instructorProfile: true,
-      courses: {
-        limit: 4,
-        orderBy: (courses, { desc }) => [desc(courses.createdAt)],
-        with: {
-          reviews: {
-            with: {
-              user: true,
-            },
-          },
-        },
-      },
-    },
-  });
+  const instructorData = await db
+    .select({
+      user: users,
+      instructorProfile: instructors,
+    })
+    .from(users)
+    .leftJoin(instructors, eq(instructors.userId, users.id))
+    .where(eq(users.id, userId))
+    .get();
 
   if (!instructorData || !instructorData.instructorProfile) {
-    // Handle case where profile doesn't exist
     return <div className="p-8">Instructor profile not found.</div>;
   }
 
-  // The instructor-dashboard component expects a user object with profile properties flattened.
+  const instructorCourses = await db
+    .select()
+    .from(courses)
+    .where(eq(courses.instructorId, userId))
+    .orderBy(desc(courses.createdAt))
+    .limit(4);
+
+  const courseIds = instructorCourses.map((course) => course.id);
+
+  const courseReviews =
+    courseIds.length > 0
+      ? await db
+          .select({
+            review: reviews,
+            reviewerName: users.name,
+            reviewerImage: users.image,
+          })
+          .from(reviews)
+          .leftJoin(users, eq(reviews.userId, users.id))
+          .where(inArray(reviews.courseId, courseIds))
+      : [];
+
+  const enrollmentCounts =
+    courseIds.length > 0
+      ? await db
+          .select({
+            courseId: enrollments.courseId,
+            count: sql<number>`count(*)`.mapWith(Number),
+          })
+          .from(enrollments)
+          .where(inArray(enrollments.courseId, courseIds))
+          .groupBy(enrollments.courseId)
+      : [];
+
+  const reviewsByCourseId = new Map<number, any[]>();
+  for (const row of courseReviews) {
+    const current = reviewsByCourseId.get(row.review.courseId) ?? [];
+    current.push({
+      ...row.review,
+      user: {
+        name: row.reviewerName,
+        image: row.reviewerImage,
+      },
+    });
+    reviewsByCourseId.set(row.review.courseId, current);
+  }
+
+  const enrollmentCountByCourseId = new Map<number, number>(
+    enrollmentCounts.map((entry) => [entry.courseId, entry.count]),
+  );
+
+  const coursesForDashboard = instructorCourses.map((course) => ({
+    ...course,
+    reviews: reviewsByCourseId.get(course.id) ?? [],
+    enrollments: Array.from({
+      length: enrollmentCountByCourseId.get(course.id) ?? 0,
+    }),
+  }));
+
   const userForDashboard = {
-    ...instructorData,
+    ...instructorData.user,
     ...instructorData.instructorProfile,
   };
 
-  // 3. Pass the prepared data to the presentation component
   return (
     <InstructorProfilePage
       user={userForDashboard}
-      instructorCourses={instructorData.courses}
+      instructorCourses={coursesForDashboard}
     />
   );
 }

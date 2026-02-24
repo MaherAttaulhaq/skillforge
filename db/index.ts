@@ -1,6 +1,5 @@
 import { config as loadEnv } from "dotenv";
 import { drizzle } from "drizzle-orm/sqlite-cloud";
-import type { ExtractTablesWithRelations } from "drizzle-orm/_relations";
 import { Database } from "@sqlitecloud/drivers";
 import * as schema from "./schema";
 
@@ -20,7 +19,5 @@ const client = new Database(connectionString);
 
 // Initialize Drizzle with the client and schema
 // The schema is passed here to provide type-safety and enable relational queries.
-type AppSchema = typeof schema;
-type AppRelations = ExtractTablesWithRelations<AppSchema>;
-export const db = drizzle<AppSchema, AppRelations>({ client, schema });
+export const db = drizzle({ client, schema });
 export default db;

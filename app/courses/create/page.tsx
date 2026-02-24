@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { db } from "@/db";
+import { categories as categoriesTable } from "@/db/schema";
 import { auth } from "@/auth";
 import { hasPermission } from "@/lib/rbac";
 import { PERMISSIONS } from "@/lib/permissions";
@@ -19,7 +20,12 @@ export default async function CreateCoursePage() {
     redirect("/");
   }
 
-  const categories = await db.query.categories.findMany();
+  const categories = await db
+    .select({
+      id: categoriesTable.id,
+      title: categoriesTable.title,
+    })
+    .from(categoriesTable);
 
   return (
     <div className="min-h-screen flex flex-col">
