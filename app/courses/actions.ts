@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@/db";
+import db from "@/db";
 import { categories, courses, chapters, purchases } from "@/db/schema";
 import { eq, and, asc } from "drizzle-orm";
 

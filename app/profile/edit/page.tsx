@@ -10,9 +10,11 @@ export default async function EditProfilePage() {
   const session = await auth();
   if (!session?.user?.email) return redirect("/api/auth/signin");
 
-  const user = await db.query.users.findFirst({
-    where: eq(users.email, session.user.email),
-  });
+  const user = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, session.user.email))
+    .get();
 
   if (!user) return redirect("/api/auth/signin");
 
@@ -29,3 +31,4 @@ export default async function EditProfilePage() {
     </div>
   );
 }
+

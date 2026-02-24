@@ -36,9 +36,11 @@ async function getProfileData(query: string) {
   const session = await auth();
   if (!session?.user?.email) return null;
 
-  const user = await db.query.users.findFirst({
-    where: eq(users.email, session.user.email),
-  });
+  const user = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, session.user.email))
+    .get();
 
   if (!user) return null;
 
@@ -75,12 +77,16 @@ async function getProfileData(query: string) {
 
   const coursesWithDetails = await Promise.all(
     userEnrollments.map(async ({ course }) => {
-      const completion = await db.query.users_courses.findFirst({
-        where: and(
-          eq(users_courses.userId, user.id),
-          eq(users_courses.courseId, course.id),
-        ),
-      });
+      const completion = await db
+        .select()
+        .from(users_courses)
+        .where(
+          and(
+            eq(users_courses.userId, user.id),
+            eq(users_courses.courseId, course.id),
+          ),
+        )
+        .get();
 
       return {
         ...course,

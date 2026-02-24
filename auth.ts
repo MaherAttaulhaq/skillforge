@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import type { Adapter } from "next-auth/adapters";
 import Credentials from "next-auth/providers/credentials";
-import { DrizzleAdapter } from "@auth/drizzle-adapter";
+import { SQLiteDrizzleAdapter } from "@/lib/auth/sqlite-adapter";
 import db from "@/db";
 import * as schema from "@/db/schema";
 import { users } from "@/db/schema";
@@ -12,7 +12,7 @@ import { type Role } from "@/lib/rbac";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
-  adapter: DrizzleAdapter(db, {
+  adapter: SQLiteDrizzleAdapter(db, {
     usersTable: schema.users,
     accountsTable: schema.accounts,
     sessionsTable: schema.sessions,

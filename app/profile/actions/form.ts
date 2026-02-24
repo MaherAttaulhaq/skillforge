@@ -17,9 +17,11 @@ export async function submitAction(
     return { message: "Not authenticated", success: false };
   }
 
-  const user = await db.query.users.findFirst({
-    where: eq(users.email, session.user.email),
-  });
+  const user = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, session.user.email))
+    .get();
 
   if (!user) {
     return { message: "User not found", success: false };

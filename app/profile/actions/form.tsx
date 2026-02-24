@@ -35,9 +35,11 @@ export const submitAction = async (
     };
   }
 
-  const user = await db.query.users.findFirst({
-    where: eq(users.email, session.user.email),
-  });
+  const user = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, session.user.email))
+    .get();
 
   if (!user) return { success: false, message: "User not found" };
 

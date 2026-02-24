@@ -42,9 +42,11 @@ export default async function CommunityPage({
 
   const session = await auth();
   const currentUser = session?.user?.email
-    ? await db.query.users.findFirst({
-        where: eq(users.email, session.user.email),
-      })
+    ? await db
+        .select()
+        .from(users)
+        .where(eq(users.email, session.user.email))
+        .get()
     : null;
 
   const currentUserId = currentUser?.id;

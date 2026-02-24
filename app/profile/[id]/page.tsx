@@ -19,9 +19,11 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   const { id } = await params;
   const userId = id;
 
-  const user = await db.query.users.findFirst({
-    where: eq(users.id, userId),
-  });
+  const user = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, userId))
+    .get();
 
   const userPosts = await db
     .select({
