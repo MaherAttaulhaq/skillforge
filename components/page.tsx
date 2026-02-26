@@ -59,7 +59,7 @@ export default async function InstructorPage() {
           .groupBy(enrollments.courseId)
       : [];
 
-  const reviewsByCourseId = new Map<number>();
+  const reviewsByCourseId = new Map();
   for (const row of courseReviews) {
     const current = reviewsByCourseId.get(row.review.courseId) ?? [];
     current.push({

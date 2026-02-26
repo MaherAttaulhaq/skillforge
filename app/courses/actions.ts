@@ -1,7 +1,12 @@
 "use server";
 
 import db from "@/db";
-import { categories, courses, chapters, purchases } from "@/db/schema";
+import {
+  categories,
+  courses,
+  chapters,
+  users_courses as usersCourses,
+} from "@/db/schema";
 import { eq, and, asc } from "drizzle-orm";
 
 export async function getCategories() {
@@ -31,11 +36,11 @@ export async function getChapters(courseId: string) {
 export async function checkCourseAccess(courseId: string, userId: string) {
   const data = await db
     .select()
-    .from(purchases)
+    .from(usersCourses) // Using 'usersCourses' which exists in your migrations, instead of 'purchases'
     .where(
       and(
-        eq(purchases.userId, userId),
-        eq(purchases.courseId, parseInt(courseId)),
+        eq(usersCourses.userId, userId),
+        eq(usersCourses.courseId, parseInt(courseId, 10)),
       ),
     );
 
@@ -48,8 +53,8 @@ export async function getEnrolledCourses(userId: string) {
       course: courses,
     })
     .from(courses)
-    .innerJoin(purchases, eq(courses.id, purchases.courseId))
-    .where(eq(purchases.userId, userId));
+    .innerJoin(usersCourses, eq(courses.id, usersCourses.courseId)) // Using 'usersCourses'
+    .where(eq(usersCourses.userId, userId));
 
   return data.map((item) => item.course);
 }

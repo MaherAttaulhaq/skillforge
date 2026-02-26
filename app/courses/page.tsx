@@ -12,7 +12,8 @@ export default async function CoursesPage() {
           Explore Our Courses
         </h1>
         <p className="mt-4 text-lg text-white max-w-2xl mx-auto">
-          Unlock your potential with our expertly curated courses. Start your learning journey today.
+          Unlock your potential with our expertly curated courses. Start your
+          learning journey today.
         </p>
       </div>
 
@@ -20,7 +21,7 @@ export default async function CoursesPage() {
         {courses.map((course) => (
           <Link
             key={course.id}
-            href={`/courses/details/${course.id}/${course.title}`}
+            href={`/courses/${course.slug}`}
             className="group flex flex-col bg-white border border-slate-200 rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
           >
             <div className="relative w-full aspect-video bg-slate-100 overflow-hidden">
@@ -46,9 +47,9 @@ export default async function CoursesPage() {
                 <span className="text-sm font-bold text-slate-700">
                   {course.price && course.price > 0
                     ? new Intl.NumberFormat("en-US", {
-                      style: "currency",
-                      currency: "USD",
-                    }).format(course.price)
+                        style: "currency",
+                        currency: "USD",
+                      }).format(course.price)
                     : "Free"}
                 </span>
               </div>
