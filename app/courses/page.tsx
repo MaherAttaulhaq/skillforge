@@ -21,7 +21,7 @@ export default async function CoursesPage() {
         {courses.map((course) => (
           <Link
             key={course.id}
-            href={`/courses/${course.slug}`}
+            href={`/courses/details/${course.id}/${course.slug}`}
             className="group flex flex-col bg-white border border-slate-200 rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
           >
             <div className="relative w-full aspect-video bg-slate-100 overflow-hidden">
