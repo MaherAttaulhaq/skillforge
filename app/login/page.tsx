@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardFooter,
@@ -41,11 +40,6 @@ export default function Page() {
         <CardDescription>
           Enter your email below to sign in to your account
         </CardDescription>
-        <CardAction>
-          <Link href="/register">
-            <Button variant="link"> Sign Up</Button>
-          </Link>
-        </CardAction>
       </CardHeader>
       <CardContent>
         <form action={formAction}>
@@ -73,6 +67,11 @@ export default function Page() {
           </div>
         </form>
       </CardContent>
+      <CardFooter className="justify-center">
+        <Link href="/register">
+          <Button variant="link">Don&apos;t have an account? Sign Up</Button>
+        </Link>
+      </CardFooter>
     </Card>
   );
 }

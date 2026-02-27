@@ -8,13 +8,15 @@ export async function loginUser(
   formData: FormData,
 ) {
   try {
+    const formValues = Object.fromEntries(formData);
+    if (typeof formValues.email === "string") {
+      formValues.email = formValues.email.trim();
+    }
+
     await signIn("credentials", {
-      ...Object.fromEntries(formData),
+      ...formValues,
       redirectTo: "/profile",
     });
-    console.log(
-      "signIn completed successfully, attempting redirect to /profile",
-    );
   } catch (error) {
     if (error instanceof AuthError) {
       switch (error.type) {

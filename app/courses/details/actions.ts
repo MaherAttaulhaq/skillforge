@@ -10,7 +10,7 @@ export async function toggleLessonCompletion(
   isCompleted: boolean,
   courseId: number,
   courseSlug: string,
-  user: any
+  user: { id: string } | null,
 ) {
   if (!user) {
     return { error: "User not authenticated" };
