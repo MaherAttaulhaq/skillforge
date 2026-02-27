@@ -13,7 +13,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { loginUser } from "./actions";
 
 const initialState = {
@@ -31,7 +32,7 @@ function SubmitButton() {
 }
 
 export default function Page() {
-  const [state, formAction] = useFormState(loginUser, initialState);
+  const [state, formAction] = useActionState(loginUser, initialState);
 
   return (
     <Card className="w-full max-w-sm mx-auto my-10">
